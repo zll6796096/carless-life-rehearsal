@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      ROUTING_PROVIDER: mock
+      CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
