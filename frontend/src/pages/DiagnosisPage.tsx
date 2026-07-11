@@ -20,7 +20,7 @@ export function DiagnosisPage() {
   }, [diagnosis, ensureDiagnosis]);
 
   return (
-    <MobileAppShell title="診断結果" className="result-screen">
+    <MobileAppShell title="診断結果" className="result-screen" showHomeReturn>
       <section className="result-summary">
         {loading ? <p className="loading-text">診断しています</p> : null}
         {error ? <p className="error-text">{error}</p> : null}

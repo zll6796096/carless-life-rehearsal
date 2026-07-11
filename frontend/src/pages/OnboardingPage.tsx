@@ -63,8 +63,7 @@ export function OnboardingPage() {
       <button
         className="text-button back-button"
         type="button"
-        disabled={step === 0}
-        onClick={() => setStep(step - 1)}
+        onClick={() => (step === 0 ? navigate("/") : setStep(step - 1))}
       >
         <ChevronLeft aria-hidden="true" size={24} />
         戻る

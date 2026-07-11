@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AsyncErrorState } from "../components/AsyncErrorState";
 import { FamilyReport } from "../components/FamilyReport";
+import { HomeReturnLink } from "../components/HomeReturnLink";
 import { MapLibreStatusMap } from "../components/MapLibreStatusMap";
 import { useAppState } from "../state/AppState";
 
@@ -29,6 +30,7 @@ export function MapPage() {
   return (
     <main className="app-shell map-shell">
       <section className="flow-panel">
+        <HomeReturnLink />
         <h1>家族・支援者向け</h1>
         <p>地図とレポートは、家族や支援者が一緒に確認するための画面です。</p>
         {loading ? <p className="loading-text">地図とレポートを準備しています</p> : null}

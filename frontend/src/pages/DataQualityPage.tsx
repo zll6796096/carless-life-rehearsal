@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { HomeReturnLink } from "../components/HomeReturnLink";
 import { getDataQualityReport } from "../services/api";
 import type { DataQualityReport } from "../types";
 
@@ -16,6 +17,7 @@ export function DataQualityPage() {
   return (
     <main className="app-shell flow-shell">
       <section className="flow-panel">
+        <HomeReturnLink />
         <h1>データ確認</h1>
         {report ? (
           <>

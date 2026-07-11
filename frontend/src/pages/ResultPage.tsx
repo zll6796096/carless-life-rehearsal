@@ -16,7 +16,7 @@ export function ResultPage() {
   }, [diagnosis, ensureDiagnosis]);
 
   return (
-    <MobileAppShell title="診断結果" className="result-screen">
+    <MobileAppShell title="診断結果" className="result-screen" showHomeReturn>
       <section className="result-summary">
         {loading ? <p className="loading-text">結果を読み込んでいます</p> : null}
         {diagnosis ? (

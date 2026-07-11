@@ -203,6 +203,41 @@ describe("main frontend flow", () => {
     expect(screen.getByRole("button", { name: "10分くらい" })).toBeInTheDocument();
   });
 
+  it("returns home from the first onboarding step", async () => {
+    render(
+      <MemoryRouter initialEntries={["/onboarding"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "お住まいを選びます" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "戻る" }));
+
+    expect(screen.getByRole("heading", { name: "車なし生活リハーサル" })).toBeInTheDocument();
+  });
+
+  it("returns to the preceding onboarding step", async () => {
+    render(
+      <MemoryRouter initialEntries={["/onboarding"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: "次へ" }));
+    expect(screen.getByRole("heading", { name: "よく行く場所" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "次へ" }));
+    expect(screen.getByRole("heading", { name: "歩く時間" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "次へ" }));
+    expect(screen.getByRole("heading", { name: "乗り換え" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "戻る" }));
+    expect(screen.getByRole("heading", { name: "歩く時間" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "戻る" }));
+    expect(screen.getByRole("heading", { name: "よく行く場所" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "戻る" }));
+    expect(screen.getByRole("heading", { name: "お住まいを選びます" })).toBeInTheDocument();
+  });
+
   it("requires at least one destination before diagnosis", async () => {
     render(
       <MemoryRouter initialEntries={["/onboarding"]}>

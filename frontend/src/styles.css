@@ -100,6 +100,24 @@ p {
   line-height: 1.45;
 }
 
+.home-return-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  margin: -8px 0 8px;
+  padding: 8px 4px;
+  color: #14624f;
+  font-size: 1rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.home-return-link:focus-visible {
+  outline: 3px solid #f4a261;
+  outline-offset: 3px;
+}
+
 .app-content {
   display: grid;
   gap: 20px;

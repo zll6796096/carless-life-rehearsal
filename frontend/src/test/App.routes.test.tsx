@@ -97,6 +97,15 @@ const routeExpectations = [
   ["/data-quality", "データ確認"]
 ];
 
+const internalRoutes = [
+  "/diagnosis",
+  "/result",
+  "/rehearsal",
+  "/daily",
+  "/map",
+  "/data-quality"
+];
+
 describe("App routes", () => {
   it.each(routeExpectations)("renders %s", async (route, expectedText) => {
     render(
@@ -108,5 +117,15 @@ describe("App routes", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: expectedText })
     ).toBeInTheDocument();
+  });
+
+  it.each(internalRoutes)("provides a deterministic home return from %s", async (route) => {
+    render(
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("link", { name: "ホームへ戻る" })).toHaveAttribute("href", "/");
   });
 });

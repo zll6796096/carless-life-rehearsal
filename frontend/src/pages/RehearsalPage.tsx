@@ -70,7 +70,7 @@ export function RehearsalPage() {
   }, [loadRehearsals, rehearsalTasks.length]);
 
   return (
-    <MobileAppShell title="リハーサル" className="rehearsal-screen">
+    <MobileAppShell title="リハーサル" className="rehearsal-screen" showHomeReturn>
       <section className="rehearsal-intro">
         <p className="main-message">まずは無理のない外出を1つだけ試しましょう。</p>
         {loading ? <p className="loading-text">リハーサルを作っています</p> : null}

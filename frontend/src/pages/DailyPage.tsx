@@ -99,7 +99,7 @@ export function DailyPage() {
   }
 
   return (
-    <MobileAppShell title="いつもの場所に行きたい" className="daily-screen">
+    <MobileAppShell title="いつもの場所に行きたい" className="daily-screen" showHomeReturn>
       <section className="daily-panel">
         <button className="mic-button" type="button" onClick={() => void toggleListening()}>
           <Mic aria-hidden="true" size={52} />
