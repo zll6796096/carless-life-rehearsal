@@ -2,6 +2,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useEffect, useRef, useState } from "react";
 
+import { loadMapLibre } from "../services/maplibre";
 import type { DemoFixture, FeasibilityResult } from "../types";
 
 const statusColors = {
@@ -28,11 +29,12 @@ export function MapLibreStatusMap({
       return;
     }
 
+    let disposed = false;
     let cleanup = () => {};
 
-    void import("maplibre-gl")
+    void loadMapLibre()
       .then(({ default: maplibregl }) => {
-        if (!containerRef.current) return;
+        if (disposed || !containerRef.current) return;
         const map = new maplibregl.Map({
           container: containerRef.current,
           center: [fixture.home_location.lon ?? 139.766, fixture.home_location.lat ?? 35.6805],
@@ -80,16 +82,26 @@ export function MapLibreStatusMap({
           );
         }
 
-        cleanup = () => {
+        const removeMap = () => {
           markers.forEach((marker) => marker.remove());
           map.remove();
         };
+        if (disposed) {
+          removeMap();
+          return;
+        }
+        cleanup = removeMap;
       })
       .catch(() => {
-        setMapError("地図の読み込みに失敗しました。レポートは下に表示しています。");
+        if (!disposed) {
+          setMapError("地図の読み込みに失敗しました。レポートは下に表示しています。");
+        }
       });
 
-    return () => cleanup();
+    return () => {
+      disposed = true;
+      cleanup();
+    };
   }, [fixture, results]);
 
   return (

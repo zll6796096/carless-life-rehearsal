@@ -2,6 +2,7 @@ from app.domain.models import (
     DataQualityWarning,
     Destination,
     DestinationCategory,
+    DiagnosisDataSource,
     DiagnosisRequest,
     FeasibilityResult,
     FeasibilityStatus,
@@ -40,6 +41,19 @@ def run_life_diagnosis(request: DiagnosisRequest) -> LifeDiagnosis:
     profile = request.selected_mobility_profile
     warnings: list[DataQualityWarning] = []
     item_results: list[FeasibilityResult] = []
+    data_source = (
+        DiagnosisDataSource.FIXTURE
+        if request.mock_transport_results
+        else DiagnosisDataSource.ROUTING_PROVIDER
+    )
+    if data_source == DiagnosisDataSource.FIXTURE:
+        warnings.append(
+            DataQualityWarning(
+                code="fixture_data_only",
+                message_ja="現在はデモデータによる判定です。",
+                level="warning",
+            )
+        )
 
     for destination in request.destinations:
         round_trip = request.mock_transport_results.get(destination.id)
@@ -71,11 +85,14 @@ def run_life_diagnosis(request: DiagnosisRequest) -> LifeDiagnosis:
     status_by_category = {item.category: item.status for item in item_results}
     life_score = calculate_life_score(status_by_category)
     data_confidence = _calculate_data_confidence(item_results, warnings)
+    if data_source == DiagnosisDataSource.FIXTURE:
+        data_confidence = min(data_confidence, 0.75)
 
     return LifeDiagnosis(
         life_score=life_score,
         summary_ja=_summary_ja(life_score, item_results),
         item_results=item_results,
+        data_source=data_source,
         data_confidence=data_confidence,
         data_quality_warnings=warnings,
         next_recommended_action=_next_recommended_action(item_results),

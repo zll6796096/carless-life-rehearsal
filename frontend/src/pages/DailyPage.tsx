@@ -1,18 +1,22 @@
-import { Mic, RotateCcw, Share2 } from "lucide-react";
+import { AlertTriangle, Mic, RotateCcw, Share2 } from "lucide-react";
 import { useState } from "react";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
+import { AsyncErrorState } from "../components/AsyncErrorState";
+import { MobileAppShell } from "../components/MobileAppShell";
 import { useAppState } from "../state/AppState";
 import type { DestinationCategory } from "../types";
-import { categoryLabels } from "../utils/labels";
 import { speakJapanese } from "../utils/speech";
 
 const commandButtons: Array<{ label: string; category: DestinationCategory }> = [
-  { label: "スーパーに行きたい", category: "supermarket" },
-  { label: "病院に行きたい", category: "hospital" },
-  { label: "薬局に行きたい", category: "pharmacy" },
-  { label: "市役所に行きたい", category: "city_hall" }
+  { label: "スーパー", category: "supermarket" },
+  { label: "病院", category: "hospital" },
+  { label: "薬局", category: "pharmacy" },
+  { label: "市役所", category: "city_hall" }
 ];
+
+const missingTaskMessage = "この場所はまだ登録されていません。家族と確認してください。";
+const helpMessage = "近くの人や家族に相談してください。無理に移動しないでください。";
 
 function detectCategory(command: string): DestinationCategory | null {
   if (command.includes("スーパー")) return "supermarket";
@@ -28,15 +32,19 @@ export function DailyPage() {
     useSpeechRecognition();
   const [answer, setAnswer] = useState("行きたい場所を選んでください。");
   const [permissionError, setPermissionError] = useState("");
+  const [failedCategory, setFailedCategory] = useState<DestinationCategory | null>(null);
 
   async function answerForCategory(category: DestinationCategory) {
-    const tasks = await ensureRehearsals();
-    const task = tasks.find((item) => item.destination_category === category) ?? tasks[0];
-    const text = task
-      ? task.voice_script_ja
-      : `${categoryLabels[category]}のリハーサル情報はまだありません。家族と確認してください。`;
-    setAnswer(text);
-    speakJapanese(text);
+    setFailedCategory(null);
+    try {
+      const tasks = await ensureRehearsals();
+      const task = tasks.find((item) => item.destination_category === category);
+      const text = task ? task.voice_script_ja : missingTaskMessage;
+      setAnswer(text);
+      speakJapanese(text);
+    } catch {
+      setFailedCategory(category);
+    }
   }
 
   async function handleSpokenCommand(command: string) {
@@ -48,6 +56,11 @@ export function DailyPage() {
       setAnswer(`${answer} 家族に共有する文章はリハーサル画面で確認できます。`);
       return;
     }
+    if (command.includes("困った")) {
+      setAnswer(helpMessage);
+      speakJapanese(helpMessage);
+      return;
+    }
     const category = detectCategory(command);
     if (!category) {
       const text = "聞き取れませんでした。大きなボタンから選んでください。";
@@ -56,6 +69,15 @@ export function DailyPage() {
       return;
     }
     await answerForCategory(category);
+  }
+
+  function shareAnswer() {
+    setAnswer(`${answer} 家族に共有する文章はリハーサル画面で確認できます。`);
+  }
+
+  function showHelp() {
+    setAnswer(helpMessage);
+    speakJapanese(helpMessage);
   }
 
   async function toggleListening() {
@@ -77,15 +99,19 @@ export function DailyPage() {
   }
 
   return (
-    <main className="app-shell flow-shell">
-      <section className="flow-panel daily-panel">
-        <h1>いつもの場所に行きたい</h1>
+    <MobileAppShell title="いつもの場所に行きたい" className="daily-screen">
+      <section className="daily-panel">
         <button className="mic-button" type="button" onClick={() => void toggleListening()}>
           <Mic aria-hidden="true" size={52} />
           {listening ? "話し終わったら押す" : "マイクを押して話す"}
         </button>
         {permissionError ? <p className="warning-text">{permissionError}</p> : null}
-        <p className="daily-answer">{answer}</p>
+        {failedCategory ? (
+          <AsyncErrorState onRetry={() => void answerForCategory(failedCategory)} />
+        ) : null}
+        <p className="daily-answer" aria-live="polite">
+          {answer}
+        </p>
         <div className="choice-grid">
           {commandButtons.map((command) => (
             <button
@@ -98,21 +124,21 @@ export function DailyPage() {
             </button>
           ))}
         </div>
-        <div className="button-row two">
+        <div className="button-row daily-tools">
           <button className="icon-text-button" type="button" onClick={() => speakJapanese(answer)}>
             <RotateCcw aria-hidden="true" size={26} />
             もう一度
           </button>
-          <button
-            className="icon-text-button"
-            type="button"
-            onClick={() => setAnswer(`${answer} 家族に共有する文章はリハーサル画面で確認できます。`)}
-          >
+          <button className="icon-text-button" type="button" onClick={shareAnswer}>
             <Share2 aria-hidden="true" size={26} />
             家族に共有
           </button>
+          <button className="icon-text-button urgent" type="button" onClick={showHelp}>
+            <AlertTriangle aria-hidden="true" size={26} />
+            困った
+          </button>
         </div>
       </section>
-    </main>
+    </MobileAppShell>
   );
 }

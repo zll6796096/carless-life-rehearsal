@@ -31,6 +31,7 @@ const routeFixture = {
 const routeDiagnosis = {
   life_score: 80,
   summary_ja: "車なし生活はおおむね成立します。",
+  data_source: "fixture",
   data_confidence: 1,
   next_recommended_action: "スーパーから試してください。",
   data_quality_warnings: [],
@@ -87,12 +88,12 @@ beforeEach(() => {
 
 const routeExpectations = [
   ["/", "車なし生活リハーサル"],
-  ["/onboarding", "はじめに確認すること"],
-  ["/diagnosis", "診断をはじめます"],
+  ["/onboarding", "お住まいを選びます"],
+  ["/diagnosis", "診断結果"],
   ["/result", "診断結果"],
   ["/rehearsal", "リハーサル"],
   ["/daily", "いつもの場所に行きたい"],
-  ["/map", "家族向けマップ"],
+  ["/map", "家族・支援者向け"],
   ["/data-quality", "データ確認"]
 ];
 

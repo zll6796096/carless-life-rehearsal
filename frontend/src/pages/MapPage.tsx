@@ -1,26 +1,38 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { AsyncErrorState } from "../components/AsyncErrorState";
 import { FamilyReport } from "../components/FamilyReport";
 import { MapLibreStatusMap } from "../components/MapLibreStatusMap";
 import { useAppState } from "../state/AppState";
 
 export function MapPage() {
-  const { fixture, diagnosis, rehearsalTasks, ensureFixture, ensureDiagnosis, ensureRehearsals } =
-    useAppState();
+  const { fixture, diagnosis, rehearsalTasks, ensureRehearsals } = useAppState();
   const [loading, setLoading] = useState(!diagnosis);
+  const [loadError, setLoadError] = useState(false);
+
+  const loadReport = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      await ensureRehearsals();
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [ensureRehearsals]);
 
   useEffect(() => {
-    void Promise.all([ensureFixture(), ensureDiagnosis(), ensureRehearsals()]).finally(() =>
-      setLoading(false)
-    );
-  }, [ensureDiagnosis, ensureFixture, ensureRehearsals]);
+    void loadReport();
+  }, [loadReport]);
 
   return (
     <main className="app-shell map-shell">
       <section className="flow-panel">
-        <h1>家族向けマップ</h1>
-        <p>地図は家族や自治体向けの確認画面です。老人端の主画面ではありません。</p>
+        <h1>家族・支援者向け</h1>
+        <p>地図とレポートは、家族や支援者が一緒に確認するための画面です。</p>
         {loading ? <p className="loading-text">地図とレポートを準備しています</p> : null}
+        {loadError ? <AsyncErrorState onRetry={() => void loadReport()} /> : null}
         <MapLibreStatusMap fixture={fixture} results={diagnosis?.item_results ?? []} />
         <FamilyReport results={diagnosis?.item_results ?? []} nextTasks={rehearsalTasks} />
       </section>

@@ -71,6 +71,7 @@ export type LifeDiagnosis = {
   life_score: number;
   summary_ja: string;
   item_results: FeasibilityResult[];
+  data_source: "fixture" | "routing_provider";
   data_confidence: number;
   data_quality_warnings: DataQualityWarning[];
   next_recommended_action: string;

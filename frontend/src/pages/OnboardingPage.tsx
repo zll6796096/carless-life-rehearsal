@@ -1,8 +1,13 @@
-import { Check, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Home } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { AsyncErrorState } from "../components/AsyncErrorState";
+import { MobileAppShell } from "../components/MobileAppShell";
 import { useAppState } from "../state/AppState";
+import { categoryLabels } from "../utils/labels";
+
+const stepTitles = ["お住まいを選びます", "よく行く場所", "歩く時間", "乗り換え"];
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -19,51 +24,119 @@ export function OnboardingPage() {
   } = useAppState();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    void ensureFixture().finally(() => setLoading(false));
+  const loadFixture = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      await ensureFixture();
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }, [ensureFixture]);
 
-  if (loading || !fixture || !profile) {
-    return <main className="app-shell">読み込んでいます</main>;
+  useEffect(() => {
+    void loadFixture();
+  }, [loadFixture]);
+
+  if (loadError) {
+    return (
+      <MobileAppShell title="読み込みエラー">
+        <AsyncErrorState onRetry={() => void loadFixture()} />
+      </MobileAppShell>
+    );
   }
 
-  return (
-    <main className="app-shell flow-shell">
-      <section className="flow-panel">
-        <p className="step-label">ステップ {step + 1} / 4</p>
-        <h1>はじめに確認すること</h1>
+  if (loading || !fixture || !profile) {
+    return (
+      <MobileAppShell title="読み込んでいます">
+        <p className="loading-text">読み込んでいます</p>
+      </MobileAppShell>
+    );
+  }
 
+  const bottomActions = (
+    <>
+      <button
+        className="text-button back-button"
+        type="button"
+        disabled={step === 0}
+        onClick={() => setStep(step - 1)}
+      >
+        <ChevronLeft aria-hidden="true" size={24} />
+        戻る
+      </button>
+      {step < 3 ? (
+        <button
+          className="large-button primary compact"
+          type="button"
+          onClick={() => setStep(step + 1)}
+        >
+          次へ
+          <ChevronRight aria-hidden="true" size={26} />
+        </button>
+      ) : (
+        <button
+          className="large-button primary compact"
+          type="button"
+          disabled={selectedDestinationIds.length === 0}
+          onClick={() => navigate("/diagnosis")}
+        >
+          診断する
+        </button>
+      )}
+    </>
+  );
+
+  return (
+    <MobileAppShell
+      title={stepTitles[step]}
+      subtitle={`ステップ ${step + 1} / 4`}
+      bottom={bottomActions}
+      className="flow-screen"
+    >
+      <section className="wizard-screen">
         {step === 0 ? (
           <div className="wizard-block">
+            <button className="demo-home-card selected" type="button" aria-pressed="true">
+              <Home aria-hidden="true" size={30} />
+              <span>
+                <strong>{homeText || fixture.home_location.name}</strong>
+                <small>{fixture.home_location.address}</small>
+              </span>
+            </button>
+            <p className="warning-text">現在はデモ住所で動作します</p>
             <label className="large-label" htmlFor="home-location">
-              自宅の住所
+              表示名
             </label>
             <input
               id="home-location"
               className="large-input"
               value={homeText}
               onChange={(event) => setHomeText(event.target.value)}
-              placeholder="例：東京都デモ市1-2-3"
+              placeholder="例：デモ自宅"
             />
           </div>
         ) : null}
 
         {step === 1 ? (
           <div className="wizard-block">
-            <p className="large-label">よく行く場所</p>
-            <div className="choice-grid">
+            <div className="destination-list">
               {fixture.destinations.map((destination) => {
                 const selected = selectedDestinationIds.includes(destination.id);
                 return (
                   <button
-                    className={`choice-button ${selected ? "selected" : ""}`}
+                    className={`destination-card ${selected ? "selected" : ""}`}
                     key={destination.id}
                     type="button"
                     onClick={() => toggleDestination(destination)}
                   >
                     {selected ? <Check aria-hidden="true" size={28} /> : null}
-                    {destination.name}
+                    <span className="category-label">{categoryLabels[destination.category]}</span>
+                    <strong>{destination.name}</strong>
                   </button>
                 );
               })}
@@ -112,33 +185,14 @@ export function OnboardingPage() {
                 1回までならよい
               </button>
             </div>
+            {selectedDestinationIds.length === 0 ? (
+              <p className="error-text" role="alert">
+                少なくとも1つ選んでください。
+              </p>
+            ) : null}
           </div>
         ) : null}
-
-        <div className="nav-row">
-          {step > 0 ? (
-            <button className="text-button" type="button" onClick={() => setStep(step - 1)}>
-              戻る
-            </button>
-          ) : (
-            <span />
-          )}
-          {step < 3 ? (
-            <button className="large-button primary compact" type="button" onClick={() => setStep(step + 1)}>
-              次へ
-              <ChevronRight aria-hidden="true" size={28} />
-            </button>
-          ) : (
-            <button
-              className="large-button primary compact"
-              type="button"
-              onClick={() => navigate("/diagnosis")}
-            >
-              診断する
-            </button>
-          )}
-        </div>
       </section>
-    </main>
+    </MobileAppShell>
   );
 }

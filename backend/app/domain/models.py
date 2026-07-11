@@ -25,6 +25,11 @@ class FeasibilityStatus(StrEnum):
     UNKNOWN = "unknown"
 
 
+class DiagnosisDataSource(StrEnum):
+    FIXTURE = "fixture"
+    ROUTING_PROVIDER = "routing_provider"
+
+
 class MobilityProfile(BaseModel):
     walk_minutes: int = Field(gt=0, le=120)
     max_transfers: int = Field(ge=0, le=5)
@@ -123,6 +128,7 @@ class LifeDiagnosis(BaseModel):
     life_score: float
     summary_ja: str
     item_results: list[FeasibilityResult]
+    data_source: DiagnosisDataSource
     data_confidence: float = Field(ge=0, le=1)
     data_quality_warnings: list[DataQualityWarning] = Field(default_factory=list)
     next_recommended_action: str

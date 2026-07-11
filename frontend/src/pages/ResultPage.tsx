@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { MobileAppShell } from "../components/MobileAppShell";
 import { ResultCards } from "../components/ResultCards";
 import { useAppState } from "../state/AppState";
-import { plainLifeScore } from "../utils/labels";
+import { elderlyNextAction, plainLifeScore } from "../utils/labels";
 
 export function ResultPage() {
   const { diagnosis, ensureDiagnosis } = useAppState();
@@ -15,34 +16,26 @@ export function ResultPage() {
   }, [diagnosis, ensureDiagnosis]);
 
   return (
-    <main className="app-shell flow-shell">
-      <section className="flow-panel">
-        <h1>診断結果</h1>
+    <MobileAppShell title="診断結果" className="result-screen">
+      <section className="result-summary">
         {loading ? <p className="loading-text">結果を読み込んでいます</p> : null}
         {diagnosis ? (
           <>
-            <div className="score-band">
-              <p>{plainLifeScore(diagnosis.life_score)}</p>
-              <strong>{Math.round(diagnosis.life_score)}点</strong>
-            </div>
-            <p>{diagnosis.summary_ja}</p>
-            <ResultCards results={diagnosis.item_results} />
-            {diagnosis.data_quality_warnings.length ? (
-              <section className="warning-panel">
-                <h2>データ確認</h2>
-                {diagnosis.data_quality_warnings.map((warning) => (
-                  <p key={`${warning.code}-${warning.destination_id ?? "all"}`}>
-                    {warning.message_ja}
-                  </p>
-                ))}
-              </section>
+            <p className="plain-summary">{plainLifeScore(diagnosis.life_score)}</p>
+            <p className="score-text">生活成立度 {Math.round(diagnosis.life_score)}点</p>
+            {diagnosis.data_source === "fixture" ? (
+              <p className="warning-text" role="status">
+                現在はデモデータによる判定です。
+              </p>
             ) : null}
+            <p className="next-action">{elderlyNextAction(diagnosis.item_results)}</p>
+            <ResultCards results={diagnosis.item_results} />
             <Link className="large-button primary compact" to="/rehearsal">
               リハーサルを見る
             </Link>
           </>
         ) : null}
       </section>
-    </main>
+    </MobileAppShell>
   );
 }

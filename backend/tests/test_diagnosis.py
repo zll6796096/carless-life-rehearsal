@@ -55,6 +55,16 @@ def test_demo_diagnosis_has_explainable_expected_statuses() -> None:
     assert "帰りの便" in " ".join(by_category[DestinationCategory.CITY_HALL].reasons_ja)
 
 
+def test_demo_diagnosis_marks_fixture_provenance_and_caps_confidence() -> None:
+    diagnosis = run_life_diagnosis(build_demo_fixture())
+
+    assert diagnosis.data_source == "fixture"
+    assert diagnosis.data_confidence <= 0.75
+    assert any(
+        warning.code == "fixture_data_only" for warning in diagnosis.data_quality_warnings
+    )
+
+
 def test_missing_destination_data_returns_unknown_with_warning() -> None:
     fixture = build_demo_fixture()
     fixture.destinations = [
