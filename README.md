@@ -96,16 +96,31 @@ Implemented backend API:
 - [Japanese submission summary](docs/submission-summary-ja.md)
 - [Technical notes](docs/technical-notes.md)
 
-## Phase Roadmap
+## Cloud Run Deployment (DEMO_ONLY)
 
-1. Prompt 0: project blueprint and architecture documents
-2. Prompt 1: FastAPI and Vite project skeleton
-3. Prompt 2: domain models and fixture data
-4. Prompt 3: deterministic diagnosis and LifeScore engine
-5. Prompt 4: rehearsal task generation
-6. Prompt 5: elderly-user main frontend flow
-7. Prompt 6: voice-first interaction
-8. Prompt 7: family/admin map mode
-9. Prompt 8: OTP/GTFS routing adapter
-10. Prompt 9: data quality report
-11. Prompt 10: contest submission docs and demo script
+To deploy the frontend and backend to Google Cloud Run:
+
+```bash
+make deploy-cloud-run
+# or directly:
+bash scripts/deploy-cloud-run.sh
+```
+
+### Infrastructure Configuration
+
+- **GCP Project**: `zhang23-23`
+- **Region**: `asia-northeast1`
+- **Backend Service**: `carless-life-api` (FastAPI, 1 CPU, 512 MiB, concurrency 20, min 0, max 1)
+- **Frontend Service**: `carless-life-web` (Nginx SPA, 1 CPU, 512 MiB, min 0, max 1)
+- **Artifact Registry**: `carless-life`
+
+### Operational Limitations & Guidelines
+
+- **DEMO_ONLY**: This deployment uses deterministic fixture/mock routing data for demonstration purposes only.
+- **Stateless**: No database or persistent storage is attached; memory data resets on instance restart.
+- **Rollback**: To roll back to a previous revision:
+  ```bash
+  gcloud run services update-traffic carless-life-api --to-revisions=REVISION_NAME=100 --region=asia-northeast1
+  gcloud run services update-traffic carless-life-web --to-revisions=REVISION_NAME=100 --region=asia-northeast1
+  ```
+

@@ -1,4 +1,4 @@
-.PHONY: check-docs dev test backend-test backend-lint frontend-test frontend-build frontend-lint
+.PHONY: check-docs dev test backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run git-deploy
 
 REQUIRED_DOCS := README.md \
 	docs/product-blueprint.md \
@@ -46,3 +46,12 @@ frontend-build:
 
 frontend-lint:
 	cd frontend && npm run lint
+
+deploy-cloud-run:
+	bash scripts/deploy-cloud-run.sh
+
+git-deploy:
+	chmod +x scripts/git-deploy.sh
+	bash scripts/git-deploy.sh
+
+

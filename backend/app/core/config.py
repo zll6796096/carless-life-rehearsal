@@ -17,7 +17,12 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        origins = []
+        for raw_origin in self.cors_origins.split(","):
+            cleaned = raw_origin.strip().rstrip("/")
+            if cleaned:
+                origins.append(cleaned)
+        return origins
 
 
 @lru_cache
