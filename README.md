@@ -114,6 +114,43 @@ bash scripts/deploy-cloud-run.sh
 - **Frontend Service**: `carless-life-web` (Nginx SPA, 1 CPU, 512 MiB, min 0, max 1)
 - **Artifact Registry**: `carless-life`
 
+## Production delivery
+
+Pushes to `main` are built by the Google Cloud Build Trigger
+`carless-main-cloud-run`. The build runs backend and frontend acceptance,
+publishes full-Git-SHA images, deploys unique no-traffic candidate revisions,
+probes the health, fixture diagnosis, CORS, and SPA routes, and only then
+promotes traffic. `scripts/git-deploy.sh` performs an explicit clean-tree push;
+it does not stage files or deploy local source.
+
+The public app requires no account or login:
+
+- Web: <https://carless-life-web-788259830737.asia-northeast1.run.app/>
+- API health: <https://carless-life-api-788259830737.asia-northeast1.run.app/health>
+
+Rollback uses the previous Ready revision:
+
+```bash
+api_previous="$(gcloud run revisions list \
+  --service=carless-life-api \
+  --project=zhang23-23 --region=asia-northeast1 \
+  --sort-by='~metadata.creationTimestamp' --limit=2 \
+  --format='value(metadata.name)' | tail -n 1)"
+web_previous="$(gcloud run revisions list \
+  --service=carless-life-web \
+  --project=zhang23-23 --region=asia-northeast1 \
+  --sort-by='~metadata.creationTimestamp' --limit=2 \
+  --format='value(metadata.name)' | tail -n 1)"
+test -n "$api_previous"
+test -n "$web_previous"
+gcloud run services update-traffic carless-life-api \
+  --project=zhang23-23 --region=asia-northeast1 \
+  --to-revisions="${api_previous}=100"
+gcloud run services update-traffic carless-life-web \
+  --project=zhang23-23 --region=asia-northeast1 \
+  --to-revisions="${web_previous}=100"
+```
+
 ### Operational Limitations & Guidelines
 
 - **DEMO_ONLY**: This deployment uses deterministic fixture/mock routing data for demonstration purposes only.
@@ -123,4 +160,3 @@ bash scripts/deploy-cloud-run.sh
   gcloud run services update-traffic carless-life-api --to-revisions=REVISION_NAME=100 --region=asia-northeast1
   gcloud run services update-traffic carless-life-web --to-revisions=REVISION_NAME=100 --region=asia-northeast1
   ```
-
