@@ -1,50 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configurable defaults
-PROJECT_ID="${PROJECT_ID:-zhang23-23}"
-REGION="${REGION:-asia-northeast1}"
-API_SERVICE="${API_SERVICE:-carless-life-api}"
-WEB_SERVICE="${WEB_SERVICE:-carless-life-web}"
-COMMIT_MSG="${1:-feat: update code and trigger Cloud Run remote deployment}"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
 
-echo "=== Carless Life Rehearsal Git Push & Cloud Run Deployment ==="
-echo "Project:  ${PROJECT_ID}"
-echo "Region:   ${REGION}"
-echo "Commit:   ${COMMIT_MSG}"
-
-# Step 1: Git Add, Commit & Push
-echo "--> Staging local changes..."
-git add .
-
-if git diff-index --quiet HEAD --; then
-    echo "No uncommitted local changes found. Proceeding with current commit..."
-else
-    echo "--> Committing changes..."
-    git commit -m "${COMMIT_MSG}"
+if [[ "$(git branch --show-current)" != "main" ]]; then
+  echo "ERROR: deploy pushes are allowed only from main" >&2
+  exit 1
+fi
+if [[ -n "$(git status --porcelain=v1)" ]]; then
+  echo "ERROR: commit or classify every local change before pushing" >&2
+  git status --short
+  exit 1
 fi
 
-echo "--> Pushing to Git remote (origin main)..."
+git fetch --prune origin
+read -r behind ahead < <(git rev-list --left-right --count origin/main...main)
+if [[ "$behind" != "0" ]]; then
+  echo "ERROR: local main is behind origin/main by $behind commit(s)" >&2
+  exit 1
+fi
+if [[ "$ahead" == "0" ]]; then
+  echo "main is already synchronized; no deployment push is needed"
+  exit 0
+fi
+
+sha="$(git rev-parse HEAD)"
 git push origin main
-
-# Step 2: Trigger Remote Cloud Build Deployment
-GIT_SHA="$(git rev-parse --short HEAD || echo "latest")"
-echo "--> Executing Cloud Build remote deployment from Git repo (Commit: ${GIT_SHA})..."
-gcloud builds submit --config=cloudbuild.yaml --substitutions="_COMMIT_SHA=${GIT_SHA}" --project="${PROJECT_ID}" .
-
-
-# Step 3: Verification
-API_URL="$(gcloud run services describe "${API_SERVICE}" --project="${PROJECT_ID}" --region="${REGION}" --format='value(status.url)')"
-WEB_URL="$(gcloud run services describe "${WEB_SERVICE}" --project="${PROJECT_ID}" --region="${REGION}" --format='value(status.url)')"
-
-echo "=== Verification ==="
-echo "Backend URL:  ${API_URL}"
-echo "Frontend URL: ${WEB_URL}"
-
-echo "Checking Backend health..."
-curl -sf "${API_URL}/health" && echo " Backend Health PASSED"
-
-echo "Checking Frontend homepage..."
-curl -sf "${WEB_URL}/" >/dev/null && echo " Frontend Homepage PASSED"
-
-echo "=== Git Push & Remote Cloud Run Deployment Complete! ==="
+echo "Pushed $sha. Cloud Build Trigger owns build, candidate checks, and promotion."

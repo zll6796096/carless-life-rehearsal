@@ -1,73 +1,130 @@
 steps:
-  # 1. Build Backend Image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${_COMMIT_SHA}', './backend']
-    id: 'build-backend'
-
-  # 2. Push Backend Image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${_COMMIT_SHA}']
-    id: 'push-backend'
-    waitFor: ['build-backend']
-
-  # 3. Deploy Backend to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+  - id: backend-test
+    name: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - '${_API_SERVICE}'
-      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${_COMMIT_SHA}'
-      - '--region=${_REGION}'
-      - '--platform=managed'
-      - '--allow-unauthenticated'
-      - '--min-instances=0'
-      - '--max-instances=1'
-      - '--cpu=1'
-      - '--memory=512Mi'
-      - '--concurrency=20'
-      - '--set-env-vars=ROUTING_PROVIDER=mock'
-    id: 'deploy-backend'
-    waitFor: ['push-backend']
+      - -ceu
+      - |
+        cd backend
+        uv run pytest
+        uv run ruff check .
 
-  # 4. Build Frontend Image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${_COMMIT_SHA}', './frontend']
-    id: 'build-frontend'
-    waitFor: ['deploy-backend']
-
-  # 5. Push Frontend Image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${_COMMIT_SHA}']
-    id: 'push-frontend'
-    waitFor: ['build-frontend']
-
-  # 6. Deploy Frontend to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+  - id: frontend-test
+    name: node:22
+    dir: frontend
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - '${_WEB_SERVICE}'
-      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${_COMMIT_SHA}'
-      - '--region=${_REGION}'
-      - '--platform=managed'
-      - '--allow-unauthenticated'
-      - '--min-instances=0'
-      - '--max-instances=1'
-      - '--cpu=1'
-      - '--memory=512Mi'
-      - '--set-env-vars=API_BASE_URL=https://carless-life-api-788259830737.asia-northeast1.run.app'
-    id: 'deploy-frontend'
-    waitFor: ['push-frontend']
+      - -ceu
+      - |
+        npm ci
+        npm test
+        npm run build
+        npm run lint
+
+  - id: build-api
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --label=org.opencontainers.image.revision=${COMMIT_SHA}
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${COMMIT_SHA}
+      - backend
+
+  - id: build-web
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --label=org.opencontainers.image.revision=${COMMIT_SHA}
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${COMMIT_SHA}
+      - frontend
+
+  - id: push-api
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        set -o pipefail
+        docker push \
+          "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${COMMIT_SHA}" \
+          2>&1 | tee /workspace/carless-api-push.log
+
+  - id: push-web
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        set -o pipefail
+        docker push \
+          "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${COMMIT_SHA}" \
+          2>&1 | tee /workspace/carless-web-push.log
+
+  - id: resolve-image-digests
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        python3 - \
+          "/workspace/carless-api-push.log" \
+          "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}" \
+          "/workspace/carless-api-image.txt" \
+          "/workspace/carless-web-push.log" \
+          "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}" \
+          "/workspace/carless-web-image.txt" <<'PY'
+        import re
+        import sys
+        from pathlib import Path
+
+        for log_path, repository, output_path in (
+            sys.argv[1:4],
+            sys.argv[4:7],
+        ):
+            push_log = Path(log_path).read_text()
+            matches = re.findall(
+                r"digest:\s+(sha256:[0-9a-f]{64})\s+size:",
+                push_log,
+            )
+            if len(matches) != 1:
+                raise SystemExit(
+                    f"Expected one pushed image digest for {repository}, "
+                    f"found {len(matches)}"
+                )
+            immutable_image = f"{repository}@{matches[0]}"
+            Path(output_path).write_text(immutable_image + "\n")
+            print(f"image_digest={immutable_image}")
+        PY
+
+  - id: orchestrate-candidate-release
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - ./scripts/promote-and-verify.sh
+    env:
+      - API_SERVICE=${_API_SERVICE}
+      - BUILD_ID=$BUILD_ID
+      - COMMIT_SHA=$COMMIT_SHA
+      - DEPLOY_REGION=${_REGION}
+      - PROJECT_ID=$PROJECT_ID
+      - RELEASE_WORKSPACE=/workspace
+      - REPOSITORY_URL=https://github.com/zll6796096/carless-life-rehearsal.git
+      - SHORT_SHA=$SHORT_SHA
+      - WEB_SERVICE=${_WEB_SERVICE}
 
 substitutions:
-  _REGION: 'asia-northeast1'
-  _AR_REPO: 'carless-life'
-  _API_SERVICE: 'carless-life-api'
-  _WEB_SERVICE: 'carless-life-web'
-  _COMMIT_SHA: 'latest'
+  _REGION: asia-northeast1
+  _AR_REPO: apps
+  _API_SERVICE: carless-life-api
+  _WEB_SERVICE: carless-life-web
+
+serviceAccount: projects/zhang23-23/serviceAccounts/apps-cloud-build@zhang23-23.iam.gserviceaccount.com
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s
 
 images:
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${_COMMIT_SHA}'
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${_COMMIT_SHA}'
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${COMMIT_SHA}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${COMMIT_SHA}

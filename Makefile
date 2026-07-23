@@ -1,4 +1,4 @@
-.PHONY: check-docs dev test backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run git-deploy
+.PHONY: check-docs dev test backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run deploy-config-test git-deploy
 
 REQUIRED_DOCS := README.md \
 	docs/product-blueprint.md \
@@ -50,8 +50,10 @@ frontend-lint:
 deploy-cloud-run:
 	bash scripts/deploy-cloud-run.sh
 
+deploy-config-test:
+	bash scripts/test_cloudbuild_config.sh
+
 git-deploy:
 	chmod +x scripts/git-deploy.sh
 	bash scripts/git-deploy.sh
-
 
