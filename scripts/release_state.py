@@ -17,6 +17,9 @@ PROVENANCE_KEYS = (
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 DIGEST_PATTERN = re.compile(r"^.+@sha256:[0-9a-f]{64}$")
 TAG_PATTERN = re.compile(r"^[a-z0-9-]{1,63}$")
+STABLE_WEB_ORIGIN = (
+    "https://carless-life-web-788259830737.asia-northeast1.run.app"
+)
 
 
 class ReleaseStateError(RuntimeError):
@@ -237,6 +240,32 @@ def candidate_urls(
         _tagged_url(api_stable_url, tag),
         _tagged_url(web_stable_url, tag),
     )
+
+
+def candidate_cors_origins(
+    stable_web_url: str,
+    candidate_web_url: str,
+    phase: str,
+) -> tuple[str, ...]:
+    if phase not in ("isolated", "production"):
+        raise ReleaseStateError("Candidate phase is invalid")
+    for name, value in (
+        ("stable Web", stable_web_url),
+        ("candidate Web", candidate_web_url),
+    ):
+        parsed = urlsplit(value)
+        if (
+            parsed.scheme != "https"
+            or not parsed.netloc
+            or parsed.path not in ("", "/")
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ReleaseStateError(f"{name} origin is invalid")
+    origins = [STABLE_WEB_ORIGIN, stable_web_url.rstrip("/")]
+    if phase == "isolated":
+        origins.append(candidate_web_url.rstrip("/"))
+    return tuple(dict.fromkeys(origins))
 
 
 def plan_interrupted_pair_recovery(

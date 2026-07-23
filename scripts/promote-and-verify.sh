@@ -489,6 +489,8 @@ import json
 import sys
 from pathlib import Path
 
+from scripts.release_state import candidate_cors_origins
+
 (
     current_path,
     payload_path,
@@ -555,21 +557,20 @@ api_stable = (
     "asia-northeast1.run.app"
 )
 stable_web_origins = (
-    "https://carless-life-web-788259830737."
-    "asia-northeast1.run.app",
-    web_initial["status"]["url"],
+    candidate_cors_origins(
+        web_initial["status"]["url"],
+        candidate_web_url,
+        phase,
+    )
 )
 if product_component == "api":
-    origins = list(stable_web_origins)
-    if phase == "isolated":
-        origins.append(candidate_web_url)
     env["ROUTING_PROVIDER"] = {
         "name": "ROUTING_PROVIDER",
         "value": "mock",
     }
     env["CORS_ORIGINS"] = {
         "name": "CORS_ORIGINS",
-        "value": ",".join(origins),
+        "value": ",".join(stable_web_origins),
     }
 else:
     env["API_BASE_URL"] = {
@@ -844,10 +845,13 @@ verify_candidate_revision() {
     "${component}" \
     "${phase}" \
     "${api_candidate_url}" \
-    "${web_candidate_url}" <<'PY'
+    "${web_candidate_url}" \
+    "${web_initial}" <<'PY'
 import json
 import sys
 from pathlib import Path
+
+from scripts.release_state import candidate_cors_origins
 
 (
     revision_path,
@@ -859,9 +863,11 @@ from pathlib import Path
     phase,
     candidate_api_url,
     candidate_web_url,
+    web_initial_path,
 ) = sys.argv[1:]
 revision = json.loads(Path(revision_path).read_text())
 initial = json.loads(Path(initial_path).read_text())
+web_initial = json.loads(Path(web_initial_path).read_text())
 if phase not in ("isolated", "production"):
     raise SystemExit("Invalid candidate verification phase")
 if revision.get("status", {}).get("imageDigest") != expected_image:
@@ -912,12 +918,13 @@ if component == "api":
     if env.get("ROUTING_PROVIDER") != "mock":
         raise SystemExit("API candidate routing provider changed")
     origins = set((env.get("CORS_ORIGINS") or "").split(","))
-    expected_origins = {
-        "https://carless-life-web-788259830737.asia-northeast1.run.app",
-        initial["status"]["url"],
-    }
-    if phase == "isolated":
-        expected_origins.add(candidate_web_url)
+    expected_origins = set(
+        candidate_cors_origins(
+            web_initial["status"]["url"],
+            candidate_web_url,
+            phase,
+        )
+    )
     if origins != expected_origins:
         raise SystemExit("API candidate CORS origins are not exact")
 else:

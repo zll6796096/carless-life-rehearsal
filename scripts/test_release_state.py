@@ -14,6 +14,7 @@ from release_state import (  # noqa: E402
     acquire_lock_payload,
     assert_lock_owner,
     assert_matching_production_provenance,
+    candidate_cors_origins,
     candidate_urls,
     plan_interrupted_pair_recovery,
     release_lock_payload,
@@ -221,6 +222,32 @@ class PairSafetyTests(unittest.TestCase):
 
 
 class CandidateChainTests(unittest.TestCase):
+    def test_candidate_cors_uses_web_urls_never_api_stable_url(self) -> None:
+        origins = candidate_cors_origins(
+            "https://carless-life-web-hash-an.a.run.app",
+            (
+                "https://candidate-abcdef1-12345678---"
+                "carless-life-web-hash-an.a.run.app"
+            ),
+            "isolated",
+        )
+        self.assertEqual(
+            origins,
+            (
+                "https://carless-life-web-788259830737."
+                "asia-northeast1.run.app",
+                "https://carless-life-web-hash-an.a.run.app",
+                (
+                    "https://candidate-abcdef1-12345678---"
+                    "carless-life-web-hash-an.a.run.app"
+                ),
+            ),
+        )
+        self.assertNotIn(
+            "https://carless-life-api-hash-an.a.run.app",
+            origins,
+        )
+
     def test_unique_candidate_urls_form_exact_browser_chain(self) -> None:
         api_url, web_url = candidate_urls(
             "https://carless-life-api-hash-an.a.run.app",
