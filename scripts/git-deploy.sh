@@ -28,8 +28,10 @@ echo "--> Pushing to Git remote (origin main)..."
 git push origin main
 
 # Step 2: Trigger Remote Cloud Build Deployment
-echo "--> Executing Cloud Build remote deployment from Git repo..."
-gcloud builds submit --config=cloudbuild.yaml --project="${PROJECT_ID}" .
+GIT_SHA="$(git rev-parse --short HEAD || echo "latest")"
+echo "--> Executing Cloud Build remote deployment from Git repo (Commit: ${GIT_SHA})..."
+gcloud builds submit --config=cloudbuild.yaml --substitutions="_COMMIT_SHA=${GIT_SHA}" --project="${PROJECT_ID}" .
+
 
 # Step 3: Verification
 API_URL="$(gcloud run services describe "${API_SERVICE}" --project="${PROJECT_ID}" --region="${REGION}" --format='value(status.url)')"
