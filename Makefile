@@ -51,9 +51,9 @@ deploy-cloud-run:
 	bash scripts/deploy-cloud-run.sh
 
 deploy-config-test:
+	python3 -m unittest scripts/test_release_state.py
 	bash scripts/test_cloudbuild_config.sh
 
 git-deploy:
 	chmod +x scripts/git-deploy.sh
 	bash scripts/git-deploy.sh
-

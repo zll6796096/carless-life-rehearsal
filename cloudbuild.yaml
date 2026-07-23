@@ -5,6 +5,7 @@ steps:
     args:
       - -ceu
       - |
+        python3 -m unittest scripts/test_release_state.py
         cd backend
         uv run pytest
         uv run ruff check .

@@ -98,13 +98,9 @@ Implemented backend API:
 
 ## Cloud Run Deployment (DEMO_ONLY)
 
-To deploy the frontend and backend to Google Cloud Run:
-
-```bash
-make deploy-cloud-run
-# or directly:
-bash scripts/deploy-cloud-run.sh
-```
+Production deployment is owned exclusively by the `main` branch Cloud Build
+Trigger. The local `make deploy-cloud-run` target is an intentional fail-closed
+guard and cannot build or mutate Cloud Run.
 
 ### Infrastructure Configuration
 
@@ -112,51 +108,52 @@ bash scripts/deploy-cloud-run.sh
 - **Region**: `asia-northeast1`
 - **Backend Service**: `carless-life-api` (FastAPI, 1 CPU, 512 MiB, concurrency 20, min 0, max 1)
 - **Frontend Service**: `carless-life-web` (Nginx SPA, 1 CPU, 512 MiB, min 0, max 1)
-- **Artifact Registry**: `carless-life`
+- **Artifact Registry**: `apps`
 
 ## Production delivery
 
 Pushes to `main` are built by the Google Cloud Build Trigger
 `carless-main-cloud-run`. The build runs backend and frontend acceptance,
-publishes full-Git-SHA images, deploys unique no-traffic candidate revisions,
-probes the health, fixture diagnosis, CORS, and SPA routes, and only then
-promotes traffic. `scripts/git-deploy.sh` performs an explicit clean-tree push;
-it does not stage files or deploy local source.
+publishes full-Git-SHA images into `apps`, then acquires an owner-checked,
+resource-version-conditional release lock before any Cloud Run candidate
+mutation. It first tests an isolated browser chain in which the candidate Web
+revision points to the exact candidate API URL and that API allows only the
+exact candidate Web origin in addition to the stable origins. It then creates
+production-configured zero-traffic candidates, verifies their immutable image
+digests, fixture diagnosis, CORS preflight, and SPA/onboarding entry, and only
+then promotes both services. Any interruption before the final pair gate
+restores both exact old revisions while the lock is still owned.
+
+`scripts/git-deploy.sh` performs an explicit clean-tree push; it does not stage
+files or deploy local source.
 
 The public app requires no account or login:
 
 - Web: <https://carless-life-web-788259830737.asia-northeast1.run.app/>
 - API health: <https://carless-life-api-788259830737.asia-northeast1.run.app/health>
 
-Rollback uses the previous Ready revision:
+Each successful release log records the exact pair:
+
+- `api_rollback_revision=...`
+- `web_rollback_revision=...`
+
+Do not infer rollback targets from creation order. Copy both exact values from
+the same successful Cloud Build log and run the validation-only helper:
 
 ```bash
-api_previous="$(gcloud run revisions list \
-  --service=carless-life-api \
-  --project=zhang23-23 --region=asia-northeast1 \
-  --sort-by='~metadata.creationTimestamp' --limit=2 \
-  --format='value(metadata.name)' | tail -n 1)"
-web_previous="$(gcloud run revisions list \
-  --service=carless-life-web \
-  --project=zhang23-23 --region=asia-northeast1 \
-  --sort-by='~metadata.creationTimestamp' --limit=2 \
-  --format='value(metadata.name)' | tail -n 1)"
-test -n "$api_previous"
-test -n "$web_previous"
-gcloud run services update-traffic carless-life-api \
-  --project=zhang23-23 --region=asia-northeast1 \
-  --to-revisions="${api_previous}=100"
-gcloud run services update-traffic carless-life-web \
-  --project=zhang23-23 --region=asia-northeast1 \
-  --to-revisions="${web_previous}=100"
+API_ROLLBACK_REVISION=carless-life-api-... \
+WEB_ROLLBACK_REVISION=carless-life-web-... \
+  bash scripts/rollback-cloud-run.sh
 ```
+
+The helper refuses an active release lock and verifies that both named
+revisions are Ready, immutable-digest backed, component-correct, and owned by
+the same source commit and Cloud Build release. It prints the two exact traffic
+commands for explicit operator review; it does not execute a rollback.
 
 ### Operational Limitations & Guidelines
 
 - **DEMO_ONLY**: This deployment uses deterministic fixture/mock routing data for demonstration purposes only.
 - **Stateless**: No database or persistent storage is attached; memory data resets on instance restart.
-- **Rollback**: To roll back to a previous revision:
-  ```bash
-  gcloud run services update-traffic carless-life-api --to-revisions=REVISION_NAME=100 --region=asia-northeast1
-  gcloud run services update-traffic carless-life-web --to-revisions=REVISION_NAME=100 --region=asia-northeast1
-  ```
+- **Rollback**: Use only the exact validated API/Web pair from one successful
+  release log; never select a revision by recency.
