@@ -76,7 +76,7 @@ export function RehearsalPage() {
         {loading ? <p className="loading-text">リハーサルを作っています</p> : null}
         {loadError ? <AsyncErrorState onRetry={() => void loadRehearsals()} /> : null}
         <div className="task-list">
-          {rehearsalTasks.map((task) => {
+          {rehearsalTasks.map((task, taskIndex) => {
             const details = rehearsalDetails(task);
             return (
               <article className="task-card" key={task.id}>
@@ -98,7 +98,11 @@ export function RehearsalPage() {
                 </dl>
                 <div className="rehearsal-actions" role="group" aria-label="リハーサルの操作">
                   <button
-                    className="large-button primary rehearsal-listen"
+                    className={
+                      taskIndex === 0
+                        ? "large-button primary rehearsal-listen"
+                        : "icon-text-button rehearsal-listen"
+                    }
                     type="button"
                     onClick={() => speakJapanese(task.voice_script_ja)}
                   >

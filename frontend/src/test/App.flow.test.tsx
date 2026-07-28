@@ -126,6 +126,17 @@ const rehearsalResponse = {
       memo_ja: "10時ごろ出発。みどりスーパーへ行きます。",
       voice_script_ja: "みどりスーパーへのリハーサルです。",
       family_share_text_ja: "今日の候補はみどりスーパーです。"
+    },
+    {
+      id: "reh-2",
+      destination_id: "demo-pharmacy",
+      destination_name: "駅前薬局",
+      destination_category: "pharmacy",
+      source_status: "ok",
+      title_ja: "はじめてのリハーサル：駅前薬局",
+      memo_ja: "10時ごろ出発。駅前薬局へ行きます。",
+      voice_script_ja: "駅前薬局へのリハーサルです。",
+      family_share_text_ja: "今日の候補は駅前薬局です。"
     }
   ]
 };
@@ -323,13 +334,14 @@ describe("main frontend flow", () => {
 
     expect(await screen.findByText("はじめてのリハーサル：みどりスーパー")).toBeInTheDocument();
     expect(screen.getByText("まずは無理のない外出を1つだけ試しましょう。")).toBeInTheDocument();
-    expect(screen.getByText("出発目安: 10時ごろ")).toBeInTheDocument();
-    expect(screen.getByText("行き")).toBeInTheDocument();
-    expect(screen.getByText("帰り")).toBeInTheDocument();
-    expect(screen.getByText("もし乗り遅れたら")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "音声で聞く" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "家族に共有" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "リハーサルの操作" })).toBeInTheDocument();
+    expect(screen.getAllByText("出発目安: 10時ごろ")).toHaveLength(2);
+    expect(screen.getAllByText("行き")).toHaveLength(2);
+    expect(screen.getAllByText("帰り")).toHaveLength(2);
+    expect(screen.getAllByText("もし乗り遅れたら")).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "音声で聞く" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "家族に共有" })).toHaveLength(2);
+    expect(screen.getAllByRole("group", { name: "リハーサルの操作" })).toHaveLength(2);
+    expect(document.querySelectorAll(".rehearsal-actions .large-button.primary")).toHaveLength(1);
   });
 
   it("shows a retryable error when rehearsal loading fails", async () => {

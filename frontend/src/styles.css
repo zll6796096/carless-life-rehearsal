@@ -751,7 +751,7 @@ p {
 }
 
 .rehearsal-actions {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.78fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .rehearsal-listen,
@@ -836,7 +836,15 @@ p {
 .daily-tools .icon-text-button {
   min-width: 0;
   min-height: 56px;
-  padding-inline: 8px;
+  padding-inline: 6px;
+  gap: 6px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.daily-tools .icon-text-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .map-panel {
