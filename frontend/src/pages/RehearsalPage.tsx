@@ -96,9 +96,9 @@ export function RehearsalPage() {
                     <dd>{details.missed}</dd>
                   </div>
                 </dl>
-                <div className="button-row two">
+                <div className="rehearsal-actions" role="group" aria-label="リハーサルの操作">
                   <button
-                    className="icon-text-button"
+                    className="large-button primary rehearsal-listen"
                     type="button"
                     onClick={() => speakJapanese(task.voice_script_ja)}
                   >
@@ -106,7 +106,7 @@ export function RehearsalPage() {
                     音声で聞く
                   </button>
                   <button
-                    className="icon-text-button"
+                    className="icon-text-button rehearsal-share"
                     type="button"
                     onClick={() => {
                       setSharedTaskId(task.id);

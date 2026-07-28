@@ -48,12 +48,13 @@ export function ResultCards({ results }: { results: FeasibilityResult[] }) {
                     </div>
                     <p>{item.reasons_ja[0]}</p>
                     <button
-                      className="icon-text-button"
+                      className="speaker-button"
                       type="button"
+                      aria-label={`${item.destination_name}の理由を聞く`}
                       onClick={() => speakJapanese(item.reasons_ja.join("。"))}
                     >
-                      <Volume2 aria-hidden="true" size={24} />
-                      理由を聞く
+                      <Volume2 aria-hidden="true" size={20} />
+                      <span>理由を聞く</span>
                     </button>
                   </article>
                 ))

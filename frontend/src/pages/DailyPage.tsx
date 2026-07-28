@@ -112,7 +112,7 @@ export function DailyPage() {
         <p className="daily-answer" aria-live="polite">
           {answer}
         </p>
-        <div className="choice-grid">
+        <div className="choice-grid destination-choices" role="group" aria-label="行き先を選ぶ">
           {commandButtons.map((command) => (
             <button
               className="choice-button"
@@ -124,7 +124,7 @@ export function DailyPage() {
             </button>
           ))}
         </div>
-        <div className="button-row daily-tools">
+        <div className="button-row daily-tools" role="group" aria-label="補助操作">
           <button className="icon-text-button" type="button" onClick={() => speakJapanese(answer)}>
             <RotateCcw aria-hidden="true" size={26} />
             もう一度

@@ -97,6 +97,16 @@ export function OnboardingPage() {
       bottom={bottomActions}
       className="flow-screen"
     >
+      <div
+        className="step-progress"
+        role="progressbar"
+        aria-label="設定の進み具合"
+        aria-valuemin={1}
+        aria-valuemax={4}
+        aria-valuenow={step + 1}
+      >
+        <span style={{ width: `${((step + 1) / 4) * 100}%` }} />
+      </div>
       <section className="wizard-screen">
         {step === 0 ? (
           <div className="wizard-block">
@@ -107,7 +117,9 @@ export function OnboardingPage() {
                 <small>{fixture.home_location.address}</small>
               </span>
             </button>
-            <p className="warning-text">現在はデモ住所で動作します</p>
+            <p className="info-note" role="status">
+              現在はデモ住所で動作します
+            </p>
             <label className="large-label" htmlFor="home-location">
               表示名
             </label>
@@ -133,9 +145,13 @@ export function OnboardingPage() {
                     type="button"
                     onClick={() => toggleDestination(destination)}
                   >
-                    {selected ? <Check aria-hidden="true" size={28} /> : null}
-                    <span className="category-label">{categoryLabels[destination.category]}</span>
-                    <strong>{destination.name}</strong>
+                    <span className="destination-copy">
+                      <span className="category-label">{categoryLabels[destination.category]}</span>
+                      <strong>{destination.name}</strong>
+                    </span>
+                    <span className="selection-indicator" aria-hidden="true">
+                      {selected ? <Check size={22} /> : null}
+                    </span>
                   </button>
                 );
               })}

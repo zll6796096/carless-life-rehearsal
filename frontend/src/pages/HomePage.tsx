@@ -1,4 +1,4 @@
-import { ClipboardList, Database, MapPinned, Mic } from "lucide-react";
+import { ChevronRight, ClipboardList, Database, MapPinned, Mic } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { MobileAppShell } from "../components/MobileAppShell";
@@ -18,16 +18,21 @@ export function HomePage() {
             今日はどこかに行きたい
           </Link>
         </div>
-        <div className="home-actions secondary-actions">
-          <Link className="soft-link-button" to="/map">
-            <MapPinned aria-hidden="true" size={26} />
-            家族向けレポート
-          </Link>
-          <Link className="soft-link-button" to="/data-quality">
-            <Database aria-hidden="true" size={26} />
-            データ確認
-          </Link>
-        </div>
+        <section className="family-tools" aria-labelledby="family-tools-title">
+          <h2 id="family-tools-title">家族・支援者の方へ</h2>
+          <div className="grouped-list family-tool-list">
+            <Link className="list-row-link" to="/map">
+              <MapPinned aria-hidden="true" size={22} />
+              <span>家族向けレポート</span>
+              <ChevronRight aria-hidden="true" className="row-chevron" size={20} />
+            </Link>
+            <Link className="list-row-link" to="/data-quality">
+              <Database aria-hidden="true" size={22} />
+              <span>データ確認</span>
+              <ChevronRight aria-hidden="true" className="row-chevron" size={20} />
+            </Link>
+          </div>
+        </section>
       </section>
     </MobileAppShell>
   );
