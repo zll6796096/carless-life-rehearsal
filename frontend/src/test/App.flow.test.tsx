@@ -179,6 +179,7 @@ describe("main frontend flow", () => {
     );
     expect(screen.getByRole("link", { name: "家族向けレポート" })).toHaveAttribute("href", "/map");
     expect(screen.getByRole("link", { name: "データ確認" })).toHaveAttribute("href", "/data-quality");
+    expect(screen.getByRole("region", { name: "家族・支援者の方へ" })).toBeInTheDocument();
   });
 
   it("shows demo-address warning before destination choices in onboarding", async () => {
@@ -189,7 +190,10 @@ describe("main frontend flow", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "お住まいを選びます" })).toBeInTheDocument();
-    expect(screen.getByText("現在はデモ住所で動作します")).toBeInTheDocument();
+    const progress = screen.getByRole("progressbar", { name: "設定の進み具合" });
+    expect(progress).toHaveAttribute("aria-valuenow", "1");
+    expect(progress).toHaveAttribute("aria-valuemax", "4");
+    expect(screen.getByRole("status")).toHaveTextContent("現在はデモ住所で動作します");
     expect(screen.getByText("デモ自宅")).toBeInTheDocument();
     expect(screen.queryByLabelText("自宅の住所")).not.toBeInTheDocument();
     expect(screen.getByLabelText("表示名")).toBeInTheDocument();
@@ -295,7 +299,9 @@ describe("main frontend flow", () => {
     expect(screen.getByRole("heading", { name: "自分で行けそう" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "注意して行く" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "家族や支援者と確認" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "理由を聞く" }).length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: "みどりスーパーの理由を聞く" })
+    ).toBeInTheDocument();
   });
 
   it("shows fixture provenance in diagnosis results", async () => {
@@ -323,6 +329,7 @@ describe("main frontend flow", () => {
     expect(screen.getByText("もし乗り遅れたら")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "音声で聞く" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "家族に共有" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "リハーサルの操作" })).toBeInTheDocument();
   });
 
   it("shows a retryable error when rehearsal loading fails", async () => {
@@ -352,6 +359,8 @@ describe("main frontend flow", () => {
       </MemoryRouter>
     );
 
+    expect(screen.getByRole("group", { name: "行き先を選ぶ" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "補助操作" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "スーパー" }));
 
     expect(await screen.findByText(/みどりスーパーへのリハーサルです/)).toBeInTheDocument();
