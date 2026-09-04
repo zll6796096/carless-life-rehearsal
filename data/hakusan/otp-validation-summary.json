@@ -1,0 +1,83 @@
+{
+  "contract_id": "hakusan-otp-gate1-v1",
+  "generated_at": "2026-09-04T15:42:46+00:00",
+  "inputs": {
+    "canonical_osm_xml": "hakusan-20260903-canonical.osm",
+    "canonical_osm_xml_sha256": "81989628fee073e360aa390c718151af12456fdb66c752055e1d7b38e3b437df",
+    "graph": "graph.obj",
+    "graph_sha256": "c898d7a2fa96cf3d944783f2b7f525830260533012da44d0e7038e74f952014d",
+    "otp_osm_pbf": "hakusan-20260903-canonical.osm.pbf",
+    "otp_osm_pbf_sha256": "4414aaee7b21b1f264f26ebd9dae6bd79cc1efa5c1b04287802b8a130d66b634",
+    "pilot_gtfs": "hakusan-meguru-fixed-routes-gtfs.zip",
+    "pilot_gtfs_sha256": "4183f24d0742e5fd32a912690d475934235e36572da35604f9c806a92fe7b1b0",
+    "source_gtfs": "hakusan-meguru-gtfs.zip",
+    "source_gtfs_sha256": "ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740"
+  },
+  "inventory": {
+    "required_access_stop_count": 6,
+    "required_access_stop_ids": [
+      "136_01",
+      "15_01",
+      "17_01",
+      "23_01",
+      "24_01",
+      "69_01"
+    ],
+    "route_count": 11,
+    "route_ids": [
+      "めぐーる中央病院ルート_A",
+      "めぐーる北ルート_A",
+      "めぐーる北循環ルート_A",
+      "めぐーる北西ルート_A",
+      "めぐーる南ルート_A",
+      "めぐーる南循環ルート_A",
+      "めぐーる南西ルート_A",
+      "めぐーる東ルート_A",
+      "めぐーる松任美川ルート_A",
+      "めぐーる美川・湊ルート_A",
+      "めぐーる西ルート_A"
+    ],
+    "stop_count": 205,
+    "stop_time_count": 2867,
+    "trip_count": 115
+  },
+  "limitations": {
+    "realtime": false,
+    "routing_provider_changed": false,
+    "scope": "local Gate 1 evidence only"
+  },
+  "otp": {
+    "heap_cap_mb": 2048,
+    "jar_sha256": "112824122cd1a89e2dff6b5b3088ffbd4f04c3c0a400ca9f08f17b762f5325f6",
+    "java_major": 25,
+    "java_version": "openjdk version \"25.0.3\" 2026-04-21 LTS",
+    "process_stop": "terminated",
+    "version": "2.9.0"
+  },
+  "scenarios": {
+    "outbound": {
+      "departure": "2026-09-08T06:50:00+09:00",
+      "duration_seconds": 1210,
+      "modes": [
+        "WALK",
+        "BUS"
+      ],
+      "route_ids": [
+        "めぐーる南ルート_A"
+      ]
+    },
+    "return": {
+      "departure": "2026-09-08T11:00:00+09:00",
+      "duration_seconds": 1469,
+      "modes": [
+        "BUS",
+        "WALK"
+      ],
+      "route_ids": [
+        "めぐーる南ルート_A"
+      ]
+    }
+  },
+  "schema_version": 1,
+  "status": "PASS"
+}
