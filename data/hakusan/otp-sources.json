@@ -12,7 +12,7 @@
   "gtfs": {
     "source_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
     "source_sha256": "ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740",
-    "pilot_filename": "hakusan-meguru-fixed-routes.zip",
+    "pilot_filename": "hakusan-meguru-fixed-routes-gtfs.zip",
     "expected": {
       "route_count": 11,
       "trip_count": 115,

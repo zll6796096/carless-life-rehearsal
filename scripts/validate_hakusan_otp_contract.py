@@ -248,12 +248,15 @@ def _validate_gtfs(repo_root: Path, sources: dict[str, Any], errors: list[str]) 
     source_sha = _nested(sources, "gtfs", "source_sha256")
     _check_sha(errors, source_sha, "GTFS source")
     _expect(errors, source_sha, GTFS_SHA256, "GTFS source sha256 mismatch")
+    pilot_filename = _nested(sources, "gtfs", "pilot_filename")
     _expect(
         errors,
-        _nested(sources, "gtfs", "pilot_filename"),
-        "hakusan-meguru-fixed-routes.zip",
+        pilot_filename,
+        "hakusan-meguru-fixed-routes-gtfs.zip",
         "GTFS pilot filename mismatch",
     )
+    if not isinstance(pilot_filename, str) or "gtfs" not in pilot_filename.lower():
+        errors.append("GTFS pilot filename must contain gtfs")
     for key, expected in EXPECTED_COUNTS.items():
         _expect(
             errors,

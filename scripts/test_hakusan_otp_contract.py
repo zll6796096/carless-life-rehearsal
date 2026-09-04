@@ -90,6 +90,13 @@ class OtpContractTests(unittest.TestCase):
         self.assertIn("GTFS expected route_count must be 11", errors)
         self.assertIn("OSM canonical sha256 must be lowercase hexadecimal", errors)
 
+    def test_pilot_filename_must_be_discoverable_by_otp(self) -> None:
+        payload = self._sources()
+        payload["gtfs"]["pilot_filename"] = "pilot.zip"
+        self._write_sources(payload)
+
+        self.assertIn("GTFS pilot filename must contain gtfs", validate_otp_contract(self.root))
+
     def test_scenario_and_graphql_contract_are_pinned(self) -> None:
         payload = self._sources()
         payload["runtime"]["graphql_endpoint_path"] = "/otp/routers/default/index/graphql"
