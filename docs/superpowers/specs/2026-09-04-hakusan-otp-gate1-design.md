@@ -1,7 +1,6 @@
 # Hakusan OTP Gate 1 Design
 
-**Status:** Approved approach 1 on 2026-09-04; written specification awaiting
-user review before implementation.
+**Status:** Approved by the user on 2026-09-05; implementation authorized.
 
 ## Objective
 
@@ -98,9 +97,16 @@ east=136.6223390
 ```
 
 The query retains highway ways, required member nodes, and restriction
-relations. The exact query text, endpoint, timestamp, response SHA-256, and ODbL
-attribution are stored in the tracked source manifest. The raw `.osm` response
-remains under ignored `data/external/hakusan/otp/` storage.
+relations. Overpass adds mutable server metadata such as `osm_base` even for a
+historical query, so the raw response is not used as the reproducibility hash.
+A deterministic canonicalization step removes the root generator, note, meta,
+and contributor `user`/`uid` attributes, writes fixed bounds, sorts top-level
+OSM elements by type and numeric ID, sorts tags by key/value, and preserves way
+node order and relation member order. The exact query text, endpoint, timestamp,
+canonical snapshot SHA-256, and ODbL attribution are stored in the tracked
+source manifest. Both the raw response and canonical `.osm` snapshot remain
+under ignored `data/external/hakusan/otp/` storage; OTP receives only the
+canonical snapshot.
 
 ### OpenTripPlanner
 
@@ -141,6 +147,13 @@ Pure-Python, standard-library preparation and validation. Its core functions
 accept explicit paths, return structured errors, and perform no network access.
 The CLI writes the deterministic pilot ZIP only after all checks pass.
 
+### `scripts/prepare_hakusan_osm.py`
+
+Pure-Python, standard-library OSM canonicalization. It checks the requested
+historical date and bounds against the tracked query contract, removes mutable
+Overpass response metadata and unnecessary contributor identifiers, and writes
+a stable XML snapshot before its SHA-256 is validated.
+
 ### `scripts/fetch_hakusan_otp_inputs.py`
 
 Explicit network command for the pinned JAR and historical OSM query. It writes
@@ -178,6 +191,8 @@ They cover:
 - source hash enforcement;
 - route/dependent-table filtering;
 - deterministic ZIP bytes;
+- deterministic canonical OSM bytes despite changing Overpass `osm_base` and
+  generator metadata;
 - missing route and broken-reference rejection;
 - destination access-stop preservation;
 - exact route-inventory enforcement;
@@ -199,7 +214,7 @@ pinned GTFS + route policy
           v
 deterministic 11-route pilot GTFS ----+
                                       |
-pinned OSM + pinned OTP JAR ----------+--> OTP graph build
+canonical pinned OSM + pinned OTP JAR +--> OTP graph build
                                                 |
                                                 v
                                       local GTFS GraphQL
@@ -230,7 +245,7 @@ rules, OTP version, and acceptance queries.
 Gate 1 is accepted only when fresh evidence shows:
 
 1. Offline unit and documentation gates pass.
-2. Source GTFS, OSM, OTP JAR, and configs match committed hashes.
+2. Source GTFS, canonical OSM, OTP JAR, and configs match committed hashes.
 3. The derived GTFS contains 11 allowed and zero excluded routes.
 4. OTP 2.9.0 builds and reloads the graph under the bounded Java process.
 5. GraphQL exposes exactly 11 allowlisted routes and all six destination stops.
