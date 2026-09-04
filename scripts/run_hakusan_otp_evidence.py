@@ -192,7 +192,9 @@ def _routing_errors(connection: Mapping[str, object]) -> list[str]:
         code = row.get("code") if row is not None else None
         description = row.get("description") if row is not None else None
         code_text = code if isinstance(code, str) and code else "UNKNOWN"
-        description_text = description if isinstance(description, str) and description else "no description"
+        description_text = (
+            description if isinstance(description, str) and description else "no description"
+        )
         errors.append(f"OTP routing error {code_text}: {description_text}")
     return errors
 
@@ -274,8 +276,12 @@ def scan_otp_log(text: str) -> list[str]:
         normalized = line.lower()
         if "warn" not in normalized:
             continue
-        mentions_configuration = "config" in normalized or "parameter" in normalized or "property" in normalized
-        if mentions_configuration and any(marker in normalized for marker in _CONFIG_WARNING_MARKERS):
+        mentions_configuration = (
+            "config" in normalized or "parameter" in normalized or "property" in normalized
+        )
+        if mentions_configuration and any(
+            marker in normalized for marker in _CONFIG_WARNING_MARKERS
+        ):
             warnings.append(line.strip()[:500])
     return list(dict.fromkeys(warnings))
 
@@ -364,6 +370,42 @@ def _validate_input(path: Path, label: str, expected_sha: str, expected_size: in
     actual_sha = _sha256(path)
     if actual_sha != expected_sha:
         raise EvidenceError(f"{label} sha256 mismatch: expected {expected_sha}, got {actual_sha}")
+
+
+def validate_canonical_osm_source(path: Path, contract: Mapping[str, object]) -> None:
+    filename = contract.get("canonical_filename")
+    expected_sha = contract.get("canonical_sha256")
+    expected_size = contract.get("canonical_size_bytes")
+    if not isinstance(filename, str) or not filename:
+        raise EvidenceError("canonical OSM contract is missing filename")
+    if path.name != filename:
+        raise EvidenceError(
+            f"canonical OSM filename mismatch: expected {filename}, got {path.name}"
+        )
+    if not isinstance(expected_sha, str) or not expected_sha:
+        raise EvidenceError("canonical OSM contract is missing sha256")
+    if not isinstance(expected_size, int) or isinstance(expected_size, bool) or expected_size < 0:
+        raise EvidenceError("canonical OSM contract has invalid size_bytes")
+    _validate_input(path, "canonical OSM XML", expected_sha, expected_size)
+
+
+def validate_otp_osm_input(path: Path, contract: Mapping[str, object]) -> None:
+    if not path.name.lower().endswith(".osm.pbf"):
+        raise EvidenceError("OTP OSM input must end in .osm.pbf")
+    filename = contract.get("filename")
+    expected_sha = contract.get("sha256")
+    expected_size = contract.get("size_bytes")
+    if not isinstance(filename, str) or not filename:
+        raise EvidenceError("OTP OSM input contract is missing filename")
+    if path.name != filename:
+        raise EvidenceError(
+            f"OTP OSM input filename mismatch: expected {filename}, got {path.name}"
+        )
+    if not isinstance(expected_sha, str) or not expected_sha:
+        raise EvidenceError("OTP OSM input contract is missing sha256")
+    if not isinstance(expected_size, int) or isinstance(expected_size, bool) or expected_size < 0:
+        raise EvidenceError("OTP OSM input contract has invalid size_bytes")
+    _validate_input(path, "OTP OSM PBF", expected_sha, expected_size)
 
 
 def _load_json(path: Path, label: str) -> dict[str, Any]:
@@ -487,8 +529,13 @@ def _fresh_run_directory(work_root: Path) -> Path:
     return Path(tempfile.mkdtemp(prefix="run-", dir=work_root))
 
 
-def _copy_inputs(repo_root: Path, osm: Path, run_directory: Path) -> None:
-    shutil.copyfile(osm, run_directory / "hakusan-20260903-canonical.osm")
+def _copy_inputs(
+    repo_root: Path,
+    osm: Path,
+    osm_filename: str,
+    run_directory: Path,
+) -> None:
+    shutil.copyfile(osm, run_directory / osm_filename)
     shutil.copyfile(
         repo_root / "config" / "otp" / "hakusan" / "build-config.json",
         run_directory / "build-config.json",
@@ -511,6 +558,7 @@ def _run_build(
         f"-Xmx{heap_mb}m",
         "-jar",
         str(otp_jar.resolve()),
+        "--abortOnUnknownConfig",
         "--build",
         "--save",
         str(run_directory.resolve()),
@@ -528,7 +576,9 @@ def _run_build(
             raise EvidenceError(f"OTP graph build timed out after {timeout:g}s") from error
     log_text = log_path.read_text(encoding="utf-8", errors="replace")
     if result.returncode != 0:
-        raise EvidenceError(f"OTP graph build failed with code {result.returncode}; see {log_path.name}")
+        raise EvidenceError(
+            f"OTP graph build failed with code {result.returncode}; see {log_path.name}"
+        )
     warnings = scan_otp_log(log_text)
     if warnings:
         raise EvidenceError(f"OTP graph build configuration warning: {warnings[0]}")
@@ -549,6 +599,7 @@ def _start_server(
         f"-Xmx{heap_mb}m",
         "-jar",
         str(otp_jar.resolve()),
+        "--abortOnUnknownConfig",
         "--load",
         "--serve",
         "--bindAddress",
@@ -586,15 +637,13 @@ def run_evidence(args: argparse.Namespace) -> dict[str, object]:
     allowed_routes, access_stops, destinations = _policy(repo_root)
 
     otp_jar = args.otp_jar.resolve()
+    osm_source = args.osm_source.resolve()
     osm = args.osm.resolve()
     gtfs_zip = args.gtfs_zip.resolve()
     _validate_input(otp_jar, "OTP JAR", sources["otp"]["sha256"], sources["otp"]["size_bytes"])
-    _validate_input(
-        osm,
-        "canonical OSM",
-        sources["osm"]["canonical_sha256"],
-        sources["osm"]["canonical_size_bytes"],
-    )
+    validate_canonical_osm_source(osm_source, sources["osm"])
+    otp_osm_input = sources["osm"]["otp_input"]
+    validate_otp_osm_input(osm, otp_osm_input)
     _require_file(gtfs_zip, "source GTFS")
     if args.port != sources["runtime"]["port"]:
         raise EvidenceError(f"OTP port must match contract: {sources['runtime']['port']}")
@@ -620,7 +669,7 @@ def run_evidence(args: argparse.Namespace) -> dict[str, object]:
             raise EvidenceError(
                 f"pilot GTFS {key} mismatch: expected {expected}, got {gtfs_summary.get(key)}"
             )
-    _copy_inputs(repo_root, osm, run_directory)
+    _copy_inputs(repo_root, osm, otp_osm_input["filename"], run_directory)
 
     graph_path, _build_log = _run_build(
         otp_jar,
@@ -719,8 +768,10 @@ def run_evidence(args: argparse.Namespace) -> dict[str, object]:
             "source_gtfs_sha256": sources["gtfs"]["source_sha256"],
             "pilot_gtfs": pilot_gtfs.name,
             "pilot_gtfs_sha256": gtfs_summary["pilot_sha256"],
-            "canonical_osm": osm.name,
-            "canonical_osm_sha256": sources["osm"]["canonical_sha256"],
+            "canonical_osm_xml": osm_source.name,
+            "canonical_osm_xml_sha256": sources["osm"]["canonical_sha256"],
+            "otp_osm_pbf": osm.name,
+            "otp_osm_pbf_sha256": otp_osm_input["sha256"],
             "graph": graph_path.name,
             "graph_sha256": _sha256(graph_path),
         },
@@ -735,13 +786,17 @@ def run_evidence(args: argparse.Namespace) -> dict[str, object]:
         },
         "scenarios": {
             "outbound": {
-                "departure": f"{sources['scenario']['service_date']}T{sources['scenario']['outbound_time']}",
+                "departure": (
+                    f"{sources['scenario']['service_date']}T{sources['scenario']['outbound_time']}"
+                ),
                 "modes": outbound.modes,
                 "route_ids": outbound.route_ids,
                 "duration_seconds": outbound.duration_seconds,
             },
             "return": {
-                "departure": f"{sources['scenario']['service_date']}T{sources['scenario']['return_time']}",
+                "departure": (
+                    f"{sources['scenario']['service_date']}T{sources['scenario']['return_time']}"
+                ),
                 "modes": return_trip.modes,
                 "route_ids": return_trip.route_ids,
                 "duration_seconds": return_trip.duration_seconds,
@@ -762,6 +817,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Build and verify Hakusan OTP Gate 1 evidence")
     parser.add_argument("--repo-root", type=Path, default=repo_root)
     parser.add_argument("--gtfs-zip", type=Path, required=True)
+    parser.add_argument("--osm-source", type=Path, required=True)
     parser.add_argument("--osm", type=Path, required=True)
     parser.add_argument("--otp-jar", type=Path, required=True)
     parser.add_argument(

@@ -16,8 +16,12 @@ before any application runtime switches from the deterministic mock provider.
 ## Selected Approach
 
 Use the official OpenTripPlanner 2.9.0 shaded JAR with Java 25. The release
-asset, source GTFS, historical OSM extract, configuration, and route policy are
-all pinned by SHA-256 before graph construction.
+asset, source GTFS, historical OSM extract, derived OSM PBF, converter,
+configuration, and route policy are all pinned by SHA-256 before graph
+construction. Direct inspection of the 2.9.0 JAR during implementation showed
+that its OSM provider parses PBF input even though source discovery can match an
+`.osm` name, so XML is retained as the reproducible source snapshot and never
+passed directly to OTP.
 
 The build input is not the full Hakusan feed. A deterministic preparation step
 creates a derived GTFS ZIP containing only the 11 fixed routes explicitly
@@ -38,7 +42,8 @@ Two alternatives were rejected:
 Gate 1 includes:
 
 - pinned OTP 2.9.0 release identity and SHA-256;
-- a fixed historical OpenStreetMap street snapshot and SHA-256;
+- a fixed historical OpenStreetMap XML source snapshot, deterministic PBF
+  derivative, converter version, and SHA-256 values;
 - deterministic creation and validation of the 11-route pilot GTFS;
 - local OTP graph build and server startup;
 - GraphQL inventory, stop-presence, and walking-plus-bus journey evidence;
@@ -105,8 +110,10 @@ OSM elements by type and numeric ID, sorts tags by key/value, and preserves way
 node order and relation member order. The exact query text, endpoint, timestamp,
 canonical snapshot SHA-256, and ODbL attribution are stored in the tracked
 source manifest. Both the raw response and canonical `.osm` snapshot remain
-under ignored `data/external/hakusan/otp/` storage; OTP receives only the
-canonical snapshot.
+under ignored `data/external/hakusan/otp/` storage. A separately pinned
+Pyosmium 4.3.1 binary-wheel requirement converts the verified XML to a
+deterministic `.osm.pbf`; its exact hash and size are validated before OTP
+receives it.
 
 ### OpenTripPlanner
 
@@ -116,6 +123,8 @@ The source manifest records:
 - official GitHub release asset URL;
 - locally verified JAR SHA-256;
 - required Java major version `25`;
+- Pyosmium version plus a hash-locked binary-wheel requirements file;
+- exact OSM PBF filename, size, and SHA-256;
 - build and router configuration SHA-256 values.
 
 Acquisition never trusts a mutable `latest` URL. A download is accepted only
@@ -133,6 +142,8 @@ test date, expected route/stop counts, and all immutable hashes.
 Contains:
 
 - `osm-overpass.ql`: fixed historical OSM query;
+- `osmium-requirements.txt`: Pyosmium 4.3.1 with approved CPython 3.14 binary
+  wheel hashes;
 - `build-config.json`: absolute transit service range, import report enabled,
   and a version label;
 - `router-config.json`: minimal versioned configuration with no production
@@ -154,6 +165,13 @@ historical date and bounds against the tracked query contract, removes mutable
 Overpass response metadata and unnecessary contributor identifiers, and writes
 a stable XML snapshot before its SHA-256 is validated.
 
+### `scripts/prepare_hakusan_osm_pbf.py`
+
+Converts only the hash-verified canonical XML to OTP's PBF input. It requires
+the exact converter version, validates the output filename, size, and SHA-256,
+writes atomically, and reuses a valid existing PBF without importing the
+converter. A failed conversion cannot replace an existing valid artifact.
+
 ### `scripts/fetch_hakusan_otp_inputs.py`
 
 Explicit network command for the pinned JAR and historical OSM query. It writes
@@ -164,7 +182,7 @@ unexpected host, and validates committed hashes. Normal tests never invoke it.
 
 Orchestrates one bounded local evidence run:
 
-1. Verify Java 25 and every input/config checksum.
+1. Verify Java 25 and every input/config checksum, including the exact `.osm.pbf`.
 2. Create and validate the pilot GTFS.
 3. Run OTP with a 2 GiB JVM heap cap to build and save `graph.obj`.
 4. Start the saved graph on `127.0.0.1:18081`.
@@ -193,6 +211,8 @@ They cover:
 - deterministic ZIP bytes;
 - deterministic canonical OSM bytes despite changing Overpass `osm_base` and
   generator metadata;
+- source XML, converter version, destination name, size, and hash enforcement
+  for the deterministic OSM PBF;
 - missing route and broken-reference rejection;
 - destination access-stop preservation;
 - exact route-inventory enforcement;
@@ -209,23 +229,19 @@ to use the network.
 ## Data Flow
 
 ```text
-pinned GTFS + route policy
-          |
-          v
-deterministic 11-route pilot GTFS ----+
-                                      |
-canonical pinned OSM + pinned OTP JAR +--> OTP graph build
-                                                |
-                                                v
-                                      local GTFS GraphQL
-                                                |
-                     +--------------------------+------------------+
-                     |                          |                  |
-              exact route set          six access stops    WALK+BUS round trip
-                     +--------------------------+------------------+
-                                                |
-                                                v
-                                   sanitized evidence summary
+pinned GTFS + route policy --> deterministic 11-route pilot GTFS --+
+canonical OSM XML -- pinned Pyosmium --> verified OSM PBF ---------+--> OTP graph
+pinned OTP JAR + pinned configuration -----------------------------+       |
+                                                                           v
+                                                                 local GTFS GraphQL
+                                                                           |
+                                    +--------------------------------------+-------+
+                                    |                    |                         |
+                             exact route set      six access stops         WALK+BUS round trip
+                                    +--------------------+-------------------------+
+                                                                           |
+                                                                           v
+                                                              sanitized evidence summary
 ```
 
 ## Failure Semantics
@@ -245,7 +261,8 @@ rules, OTP version, and acceptance queries.
 Gate 1 is accepted only when fresh evidence shows:
 
 1. Offline unit and documentation gates pass.
-2. Source GTFS, canonical OSM, OTP JAR, and configs match committed hashes.
+2. Source GTFS, canonical OSM XML, derived OSM PBF, converter requirements, OTP
+   JAR, and configs match committed hashes.
 3. The derived GTFS contains 11 allowed and zero excluded routes.
 4. OTP 2.9.0 builds and reloads the graph under the bounded Java process.
 5. GraphQL exposes exactly 11 allowlisted routes and all six destination stops.
@@ -268,7 +285,8 @@ Gate 1 is accepted only when fresh evidence shows:
 - **Resource use:** build and server processes use a 2 GiB heap cap and bounded
   timeouts; raising the limit requires evidence that the small Hakusan graph
   needs it.
-- **Version drift:** no `latest` URL or unpinned OTP configuration is accepted.
+- **Version drift:** no `latest` URL, source-built converter, unpinned wheel, or
+  unpinned OTP configuration is accepted.
 - **Product truthfulness:** Gate 1 evidence does not authorize runtime, UI, or
   production claims; `ROUTING_PROVIDER=mock` remains unchanged.
 

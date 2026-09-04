@@ -82,9 +82,10 @@ verified.
 
 Gate 1 is a local evidence layer, not a backend/provider switch. It pins
 OpenTripPlanner 2.9.0, its release SHA-256 and size, Java 25, the Gate 0 source
-GTFS identity, three configuration/query files, and a canonical historical OSM
-snapshot. The deterministic pilot contains 11 fixed routes, 115 trips, 2,867
-stop-times, and 205 stops. Raw and generated inputs remain ignored.
+GTFS identity, three configuration/query files, a hash-locked Pyosmium 4.3.1
+converter, and both canonical historical OSM XML and derived PBF identities.
+The deterministic pilot contains 11 fixed routes, 115 trips, 2,867 stop-times,
+and 205 stops. Raw and generated inputs remain ignored.
 
 The normal offline gate is:
 
@@ -92,7 +93,7 @@ The normal offline gate is:
 make hakusan-otp-test
 ```
 
-It runs five standard-library test modules, validates the committed source
+It runs six standard-library test modules, validates the committed source
 contract, and checks these documentation markers. It does not access the
 network, execute Java, or write an evidence summary.
 
@@ -104,8 +105,11 @@ make hakusan-otp-fetch
 
 The fetcher accepts only HTTPS and allowlisted GitHub/Overpass redirect hosts,
 writes through temporary sibling files, verifies pinned size and SHA-256 before
-replacement, canonicalizes changing Overpass response metadata, and writes
-only under ignored `data/external/`.
+replacement, and canonicalizes changing Overpass response metadata. The Make
+workflow then creates an ignored virtual environment, installs Pyosmium 4.3.1
+from a hash-locked binary-wheel requirement, and converts the verified XML to
+the exact hash-pinned OSM PBF. All generated files remain under ignored
+`data/external/`.
 
 The explicit evidence command is:
 
@@ -114,9 +118,10 @@ make hakusan-otp-evidence \
   HAKUSAN_GTFS_ZIP=/path/to/pinned-feed.zip
 ```
 
-It validates every input, creates the allowlisted GTFS, builds and reloads an
-OTP graph with a 2 GiB heap cap and bounded timeouts, and binds the server to
-`127.0.0.1:18081`. It queries the GTFS GraphQL endpoint `/otp/gtfs/v1` using
+It validates every input, rejects XML in place of the pinned OSM PBF, creates
+the allowlisted GTFS, builds and reloads an OTP graph with a 2 GiB heap cap and
+bounded timeouts, and binds the server to `127.0.0.1:18081`. It queries the GTFS
+GraphQL endpoint `/otp/gtfs/v1` using
 the non-deprecated `planConnection` API with transit-only BUS plus WALK
 access/egress/transfer. Acceptance requires exactly the 11 route IDs, all six
 destination access stops, and WALK+BUS outbound and return itineraries on

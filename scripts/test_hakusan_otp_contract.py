@@ -6,7 +6,6 @@ from pathlib import Path
 
 from scripts.validate_hakusan_otp_contract import validate_otp_contract
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -74,6 +73,28 @@ class OtpContractTests(unittest.TestCase):
         self.assertIn("OSM query must pin historical timestamp", errors)
         self.assertIn("OSM query must pin approved bbox", errors)
         self.assertIn("OSM license URL must pin ODbL 1.0", errors)
+
+    def test_otp_osm_pbf_and_converter_are_pinned(self) -> None:
+        payload = self._sources()
+        payload["osm"]["otp_input"] = {
+            "format": "xml",
+            "filename": "mutable.osm",
+            "sha256": "0" * 64,
+            "size_bytes": 1,
+        }
+        payload["osm"]["converter"] = {
+            "distribution": "osmium",
+            "version": "latest",
+            "requirements_path": "mutable.txt",
+            "requirements_sha256": "0" * 64,
+        }
+        self._write_sources(payload)
+
+        errors = validate_otp_contract(self.root)
+
+        self.assertIn("OTP OSM input format must be osm.pbf", errors)
+        self.assertIn("OTP OSM PBF sha256 mismatch", errors)
+        self.assertIn("OSM converter version must be 4.3.1", errors)
 
     def test_gtfs_identity_counts_and_sha_formats_are_pinned(self) -> None:
         payload = self._sources()

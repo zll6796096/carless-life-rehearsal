@@ -34,6 +34,18 @@
     "canonical_filename": "hakusan-20260903-canonical.osm",
     "canonical_sha256": "81989628fee073e360aa390c718151af12456fdb66c752055e1d7b38e3b437df",
     "canonical_size_bytes": 14815819,
+    "otp_input": {
+      "format": "osm.pbf",
+      "filename": "hakusan-20260903-canonical.osm.pbf",
+      "sha256": "4414aaee7b21b1f264f26ebd9dae6bd79cc1efa5c1b04287802b8a130d66b634",
+      "size_bytes": 985152
+    },
+    "converter": {
+      "distribution": "osmium",
+      "version": "4.3.1",
+      "requirements_path": "config/otp/hakusan/osmium-requirements.txt",
+      "requirements_sha256": "820b452a262f3e3f3ea64b8da6b0e6d325e6931e816e3546d8b77ce4c3923dca"
+    },
     "license": {
       "name": "Open Database License 1.0",
       "spdx_id": "ODbL-1.0",

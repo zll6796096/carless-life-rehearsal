@@ -10,7 +10,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-
 OTP_URL = (
     "https://github.com/opentripplanner/OpenTripPlanner/releases/download/"
     "v2.9.0/otp-shaded-2.9.0.jar"
@@ -20,12 +19,15 @@ GTFS_UID = "765cd548-a1f3-46e6-b05b-d6168b9b85d1"
 GTFS_SHA256 = "ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740"
 OSM_QUERY_SHA256 = "76f960f09572b668beebfb54b38718b2ed0822e860258692fd15986c97ba1990"
 OSM_CANONICAL_SHA256 = "81989628fee073e360aa390c718151af12456fdb66c752055e1d7b38e3b437df"
+OSM_PBF_SHA256 = "4414aaee7b21b1f264f26ebd9dae6bd79cc1efa5c1b04287802b8a130d66b634"
+OSMIUM_REQUIREMENTS_SHA256 = "820b452a262f3e3f3ea64b8da6b0e6d325e6931e816e3546d8b77ce4c3923dca"
 BUILD_CONFIG_SHA256 = "0e0e3c3f49f72ef026386001f680eab1f1445b1312f2a8d7dad5c3287968aacd"
 ROUTER_CONFIG_SHA256 = "d5b21f29f847303b6e7ecef50e6b05bf8a101a5971cf2e466dd3b60c15711b41"
 
 QUERY_PATH = "config/otp/hakusan/osm-overpass.ql"
 BUILD_CONFIG_PATH = "config/otp/hakusan/build-config.json"
 ROUTER_CONFIG_PATH = "config/otp/hakusan/router-config.json"
+OSMIUM_REQUIREMENTS_PATH = "config/otp/hakusan/osmium-requirements.txt"
 HISTORICAL_TIMESTAMP = "2026-09-03T00:00:00Z"
 APPROVED_BBOX = {
     "south": 36.44917,
@@ -99,7 +101,9 @@ def _check_sha(errors: list[str], value: Any, label: str) -> None:
         errors.append(f"{label} sha256 must be lowercase hexadecimal")
 
 
-def _tracked_path(repo_root: Path, relative_path: Any, label: str, errors: list[str]) -> Path | None:
+def _tracked_path(
+    repo_root: Path, relative_path: Any, label: str, errors: list[str]
+) -> Path | None:
     if not isinstance(relative_path, str) or not relative_path:
         errors.append(f"{label} path is missing")
         return None
@@ -225,6 +229,56 @@ def _validate_osm(repo_root: Path, sources: dict[str, Any], errors: list[str]) -
     )
     _expect(
         errors,
+        _nested(sources, "osm", "otp_input", "format"),
+        "osm.pbf",
+        "OTP OSM input format must be osm.pbf",
+    )
+    _expect(
+        errors,
+        _nested(sources, "osm", "otp_input", "filename"),
+        "hakusan-20260903-canonical.osm.pbf",
+        "OTP OSM PBF filename mismatch",
+    )
+    pbf_sha = _nested(sources, "osm", "otp_input", "sha256")
+    _check_sha(errors, pbf_sha, "OTP OSM PBF")
+    _expect(errors, pbf_sha, OSM_PBF_SHA256, "OTP OSM PBF sha256 mismatch")
+    _expect(
+        errors,
+        _nested(sources, "osm", "otp_input", "size_bytes"),
+        985152,
+        "OTP OSM PBF size mismatch",
+    )
+    _expect(
+        errors,
+        _nested(sources, "osm", "converter", "distribution"),
+        "osmium",
+        "OSM converter distribution must be osmium",
+    )
+    _expect(
+        errors,
+        _nested(sources, "osm", "converter", "version"),
+        "4.3.1",
+        "OSM converter version must be 4.3.1",
+    )
+    requirements_path = _validate_hashed_file(
+        repo_root,
+        _nested(sources, "osm", "converter", "requirements_path"),
+        OSMIUM_REQUIREMENTS_PATH,
+        _nested(sources, "osm", "converter", "requirements_sha256"),
+        OSMIUM_REQUIREMENTS_SHA256,
+        "OSM converter requirements",
+        errors,
+    )
+    if requirements_path is not None:
+        try:
+            requirements = requirements_path.read_text(encoding="utf-8")
+        except OSError as error:
+            errors.append(f"cannot read OSM converter requirements: {error}")
+        else:
+            if "osmium==4.3.1" not in requirements or "--hash=sha256:" not in requirements:
+                errors.append("OSM converter requirements must hash-pin osmium 4.3.1")
+    _expect(
+        errors,
         _nested(sources, "osm", "license", "spdx_id"),
         "ODbL-1.0",
         "OSM license SPDX identifier must be ODbL-1.0",
@@ -238,7 +292,9 @@ def _validate_osm(repo_root: Path, sources: dict[str, Any], errors: list[str]) -
 
 
 def _validate_gtfs(repo_root: Path, sources: dict[str, Any], errors: list[str]) -> None:
-    manifest = _load_json(repo_root / "data" / "hakusan" / "manifest.json", "Hakusan manifest", errors)
+    manifest = _load_json(
+        repo_root / "data" / "hakusan" / "manifest.json", "Hakusan manifest", errors
+    )
     route_rules = _load_json(
         repo_root / "data" / "hakusan" / "route-rules.json",
         "Hakusan route rules",
@@ -279,7 +335,10 @@ def _validate_gtfs(repo_root: Path, sources: dict[str, Any], errors: list[str]) 
         )
     if route_rules is not None:
         allowed_routes = route_rules.get("allowed_routes")
-        if not isinstance(allowed_routes, list) or len(allowed_routes) != EXPECTED_COUNTS["route_count"]:
+        if (
+            not isinstance(allowed_routes, list)
+            or len(allowed_routes) != EXPECTED_COUNTS["route_count"]
+        ):
             errors.append("Hakusan route policy must contain 11 allowed routes")
         if route_rules.get("default_policy") != "deny":
             errors.append("Hakusan route policy must be deny-by-default")
@@ -298,7 +357,9 @@ def _validate_runtime_and_scenario(
         "/otp/gtfs/v1",
         "OTP GraphQL endpoint path must be /otp/gtfs/v1",
     )
-    _expect(errors, _nested(sources, "runtime", "max_heap_mb"), 2048, "OTP heap cap must be 2048 MiB")
+    _expect(
+        errors, _nested(sources, "runtime", "max_heap_mb"), 2048, "OTP heap cap must be 2048 MiB"
+    )
     timeout = _nested(sources, "runtime", "startup_timeout_seconds")
     if not isinstance(timeout, int) or not 1 <= timeout <= 180:
         errors.append("OTP startup timeout must be between 1 and 180 seconds")
@@ -377,7 +438,9 @@ def validate_otp_contract(repo_root: Path) -> list[str]:
         "OTP contract_id mismatch",
     )
     _expect(errors, _nested(sources, "otp", "version"), "2.9.0", "OTP version must be 2.9.0")
-    _expect(errors, _nested(sources, "otp", "artifact_url"), OTP_URL, "OTP artifact URL must pin v2.9.0")
+    _expect(
+        errors, _nested(sources, "otp", "artifact_url"), OTP_URL, "OTP artifact URL must pin v2.9.0"
+    )
     _expect(
         errors,
         _nested(sources, "otp", "artifact_filename"),

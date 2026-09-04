@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -12,7 +13,9 @@ from scripts.run_hakusan_otp_evidence import (
     sanitize_evidence_path,
     scan_otp_log,
     stop_process,
+    validate_canonical_osm_source,
     validate_java_major,
+    validate_otp_osm_input,
     validate_plan_response,
     validate_route_inventory,
     validate_stop_inventory,
@@ -199,7 +202,9 @@ class EvidenceValidationTests(unittest.TestCase):
             self.assertFalse(destination.exists())
 
             write_json_atomic(destination, {"status": "PASS", "input": "pilot.zip"})
-            self.assertEqual(json.loads(destination.read_text()), {"input": "pilot.zip", "status": "PASS"})
+            self.assertEqual(
+                json.loads(destination.read_text()), {"input": "pilot.zip", "status": "PASS"}
+            )
 
     def test_stop_process_escalates_to_kill_after_timeout(self) -> None:
         process = FakeProcess(timeout_on_first_wait=True)
@@ -209,6 +214,42 @@ class EvidenceValidationTests(unittest.TestCase):
         self.assertTrue(process.terminated)
         self.assertTrue(process.killed)
         self.assertEqual(outcome, "killed")
+
+    def test_otp_osm_input_must_be_pinned_pbf(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            payload = b"pbf"
+            expected = {
+                "filename": "canonical.osm.pbf",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "size_bytes": len(payload),
+            }
+            xml_path = root / "canonical.osm"
+            xml_path.write_bytes(payload)
+            with self.assertRaisesRegex(EvidenceError, "must end in .osm.pbf"):
+                validate_otp_osm_input(xml_path, expected)
+
+            pbf_path = root / "canonical.osm.pbf"
+            pbf_path.write_bytes(payload)
+            validate_otp_osm_input(pbf_path, expected)
+
+    def test_canonical_osm_source_must_match_pinned_xml(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            payload = b"<osm/>"
+            expected = {
+                "canonical_filename": "canonical.osm",
+                "canonical_sha256": hashlib.sha256(payload).hexdigest(),
+                "canonical_size_bytes": len(payload),
+            }
+            wrong_name = root / "mutable.osm"
+            wrong_name.write_bytes(payload)
+            with self.assertRaisesRegex(EvidenceError, "canonical OSM filename mismatch"):
+                validate_canonical_osm_source(wrong_name, expected)
+
+            canonical = root / "canonical.osm"
+            canonical.write_bytes(payload)
+            validate_canonical_osm_source(canonical, expected)
 
 
 if __name__ == "__main__":

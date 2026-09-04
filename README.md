@@ -112,8 +112,10 @@ make hakusan-otp-test
 ```
 
 Artifact acquisition is a separate, explicit network operation. It downloads
-and verifies only the pinned OTP JAR and historical OSM query result; the
-licensed source GTFS remains operator supplied:
+and verifies only the pinned OTP JAR and historical OSM query result, installs
+hash-pinned Pyosmium 4.3.1 into an ignored local virtual environment, and
+derives the exact OSM PBF accepted by OTP. The licensed source GTFS remains
+operator supplied:
 
 ```bash
 make hakusan-otp-fetch
@@ -127,9 +129,10 @@ make hakusan-otp-evidence \
   HAKUSAN_GTFS_ZIP=/path/to/pinned-feed.zip
 ```
 
-The runner uses loopback port 18081, caps the JVM heap at 2 GiB, enforces build
-and startup timeouts, terminates OTP after the queries, and commits no raw feed,
-OSM, JAR, graph, or full log. Those artifacts stay under ignored
+The runner verifies the pinned PBF rather than handing OSM XML to OTP, uses
+loopback port 18081, caps the JVM heap at 2 GiB, enforces build and startup
+timeouts, terminates OTP after the queries, and commits no raw feed, OSM, JAR,
+graph, or full log. Those artifacts stay under ignored
 `data/external/`; only a sanitized small evidence summary is eligible for Git.
 
 Implemented backend API:

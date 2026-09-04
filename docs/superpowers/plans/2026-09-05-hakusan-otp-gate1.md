@@ -4,9 +4,9 @@
 
 **Goal:** Build and verify a local OpenTripPlanner 2.9.0 graph from a deterministic 11-route Hakusan pilot GTFS and a canonical historical OSM snapshot, without changing the application's mock runtime.
 
-**Architecture:** Pure-Python offline preparation creates canonical OSM and a referentially valid allowlisted GTFS before OTP sees either input. A bounded Java runner builds and loads the graph, queries the official GTFS GraphQL API for exact route/stop inventory and WALK+BUS round trips, and emits a sanitized evidence summary while raw artifacts remain ignored.
+**Architecture:** Pure-Python offline preparation creates canonical OSM XML, a hash-pinned PBF derivative, and a referentially valid allowlisted GTFS before OTP sees either actual input. A bounded Java runner builds and loads the graph, queries the official GTFS GraphQL API for exact route/stop inventory and WALK+BUS round trips, and emits a sanitized evidence summary while raw artifacts remain ignored.
 
-**Tech Stack:** Python 3.12 standard library, `unittest`, OpenTripPlanner 2.9.0, Java 25, GTFS, OpenStreetMap XML/Overpass QL, GraphQL, Make.
+**Tech Stack:** Python 3.12 standard library, hash-pinned Pyosmium 4.3.1 binary wheel, `unittest`, OpenTripPlanner 2.9.0, Java 25, GTFS, OpenStreetMap XML/PBF and Overpass QL, GraphQL, Make.
 
 ---
 
@@ -20,6 +20,17 @@
 - Final proof commands: `make test`, the explicit real-artifact
   `make hakusan-otp-evidence` invocation in Task 7, `git diff --check`, and
   `git status --short --branch`.
+
+### Evidence-driven amendment: OTP requires PBF
+
+The first real graph build established a factual mismatch in the approved
+plan: OTP 2.9.0 discovers an `.osm` file but sends it to its binary PBF parser,
+which fails on XML. JAR inspection and a controlled conversion/build probe
+confirmed the smallest fix. The canonical XML remains the reproducible source;
+a new `prepare_hakusan_osm_pbf.py` stage uses exactly Pyosmium 4.3.1 from a
+hash-locked binary-wheel requirements file. The evidence runner accepts only
+the committed `.osm.pbf` filename, size, and SHA-256. This amendment changes no
+product, runtime-provider, frontend, deployment, or data-policy boundary.
 
 ### Task 1: Canonicalize historical OSM deterministically
 
@@ -209,9 +220,12 @@ git commit -m "feat: derive allowlisted Hakusan GTFS"
 
 **Files:**
 - Create: `config/otp/hakusan/osm-overpass.ql`
+- Create: `config/otp/hakusan/osmium-requirements.txt`
 - Create: `config/otp/hakusan/build-config.json`
 - Create: `config/otp/hakusan/router-config.json`
 - Create: `data/hakusan/otp-sources.json`
+- Create: `scripts/test_prepare_hakusan_osm_pbf.py`
+- Create: `scripts/prepare_hakusan_osm_pbf.py`
 - Create: `scripts/test_hakusan_otp_contract.py`
 - Create: `scripts/validate_hakusan_otp_contract.py`
 
@@ -282,6 +296,14 @@ shasum -a 256 data/external/hakusan/otp/hakusan-20260903-canonical.osm
 Expected: canonicalization succeeds and prints a lowercase 64-character
 SHA-256. Record that exact value in `otp-sources.json`.
 
+- [ ] **Step 4a: Convert the canonical XML to the pinned OTP PBF**
+
+Create an ignored virtual environment, install Pyosmium 4.3.1 using
+`--no-deps --require-hashes` and `config/otp/hakusan/osmium-requirements.txt`,
+then run `scripts/prepare_hakusan_osm_pbf.py`. Tests must prove source hash,
+converter version, output filename, output size/hash, atomic replacement, and
+valid-cache reuse. Record the exact PBF hash and size in `otp-sources.json`.
+
 - [ ] **Step 5: Add the source contract and validator**
 
 The manifest must pin:
@@ -289,8 +311,8 @@ The manifest must pin:
 - OTP URL `https://github.com/opentripplanner/OpenTripPlanner/releases/download/v2.9.0/otp-shaded-2.9.0.jar`;
 - OTP SHA-256 `112824122cd1a89e2dff6b5b3088ffbd4f04c3c0a400ca9f08f17b762f5325f6`;
 - OTP size `183261367` bytes and Java major `25`;
-- Overpass endpoint, query path/hash, historical timestamp, bbox, canonical
-  filename/hash, and ODbL URL;
+- Overpass endpoint, query path/hash, historical timestamp, bbox, canonical XML
+  filename/hash, derived PBF filename/hash/size, converter lock, and ODbL URL;
 - source GTFS UID/hash and expected pilot counts `11`, `115`, `2867`, `205`;
 - GraphQL endpoint path `/otp/gtfs/v1`, local port `18081`, service date
   `2026-09-08`, outbound time `06:50:00+09:00`, return time
@@ -451,15 +473,16 @@ access/egress/transfer, and BUS transit. Inventory queries request only
 
 - [ ] **Step 4: Implement bounded orchestration**
 
-The CLI accepts explicit `--gtfs-zip`, `--osm`, `--otp-jar`, `--work-dir`,
-`--summary-output`, `--port`, `--startup-timeout`, and `--build-timeout`.
+The CLI accepts explicit `--gtfs-zip`, `--osm-source`, `--osm`, `--otp-jar`,
+`--work-dir`, `--summary-output`, `--port`, `--startup-timeout`, and
+`--build-timeout`.
 
 Implementation order:
 
 ```text
-validate committed contract and input hashes
+validate committed contract plus canonical XML, PBF, GTFS, JAR, and config hashes
 prepare and inspect pilot GTFS
-copy only pilot GTFS, canonical OSM, build-config, router-config into work-dir
+copy only pilot GTFS, verified OSM PBF, build-config, router-config into work-dir
 java -Xmx2g -jar OTP_JAR --build --save WORK_DIR
 java -Xmx2g -jar OTP_JAR --load --serve WORK_DIR
 poll POST http://127.0.0.1:PORT/otp/gtfs/v1
@@ -516,7 +539,7 @@ Expected: failure until Make targets and documentation are present.
 
 - [ ] **Step 2: Add Make targets**
 
-Add `hakusan-otp-test` to the normal `test` dependency chain. It runs all five
+Add `hakusan-otp-test` to the normal `test` dependency chain. It runs all six
 new Python test modules, committed contract validation, and the documentation
 gate. Add explicit `hakusan-otp-fetch` and `hakusan-otp-evidence` targets with
 operator-overridable artifact paths; neither runs in `make test`.
@@ -553,19 +576,18 @@ git commit -m "docs: add Hakusan OTP Gate 1 workflow"
 - Create: `data/hakusan/otp-validation-summary.json`
 - Modify only if evidence finds a factual mismatch: `data/hakusan/otp-sources.json`
 
-- [ ] **Step 1: Download and verify the pinned OTP JAR**
+- [ ] **Step 1: Acquire and verify the pinned OTP and OSM inputs**
 
 Run:
 
 ```bash
-python3 scripts/fetch_hakusan_otp_inputs.py \
-  --repo-root . \
-  --output-dir data/external/hakusan/otp \
-  --artifact otp
+make hakusan-otp-fetch
 ```
 
 Expected: file size `183261367` and SHA-256
-`112824122cd1a89e2dff6b5b3088ffbd4f04c3c0a400ca9f08f17b762f5325f6`.
+`112824122cd1a89e2dff6b5b3088ffbd4f04c3c0a400ca9f08f17b762f5325f6`
+for the JAR, plus canonical XML and derived PBF inputs matching their committed
+hashes. The converter environment and all artifacts remain ignored.
 
 - [ ] **Step 2: Verify real source inputs**
 
@@ -587,7 +609,7 @@ Run:
 ```bash
 make hakusan-otp-evidence \
   HAKUSAN_GTFS_ZIP=/private/tmp/hakusan-meguru-gtfs.zip \
-  HAKUSAN_OTP_OSM=data/external/hakusan/otp/hakusan-20260903-canonical.osm \
+  HAKUSAN_OTP_OSM=data/external/hakusan/otp/hakusan-20260903-canonical.osm.pbf \
   HAKUSAN_OTP_JAR=data/external/hakusan/otp/otp-shaded-2.9.0.jar \
   HAKUSAN_OTP_SUMMARY=data/hakusan/otp-validation-summary.json
 ```

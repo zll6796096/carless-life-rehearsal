@@ -3,8 +3,10 @@
 HAKUSAN_GTFS_ZIP ?= data/external/hakusan/feed.zip
 HAKUSAN_VALIDATOR_REPORT ?= data/external/hakusan/validator/report.json
 HAKUSAN_OTP_DIR ?= data/external/hakusan/otp
-HAKUSAN_OTP_OSM ?= $(HAKUSAN_OTP_DIR)/hakusan-20260903-canonical.osm
+HAKUSAN_OTP_OSM_XML ?= $(HAKUSAN_OTP_DIR)/hakusan-20260903-canonical.osm
+HAKUSAN_OTP_OSM ?= $(HAKUSAN_OTP_DIR)/hakusan-20260903-canonical.osm.pbf
 HAKUSAN_OTP_JAR ?= $(HAKUSAN_OTP_DIR)/otp-shaded-2.9.0.jar
+HAKUSAN_OTP_TOOLS_VENV ?= $(HAKUSAN_OTP_DIR)/pyosmium-venv
 HAKUSAN_OTP_WORK_DIR ?= $(HAKUSAN_OTP_DIR)/evidence-runs
 HAKUSAN_OTP_SUMMARY ?= data/hakusan/otp-validation-summary.json
 HAKUSAN_OTP_PORT ?= 18081
@@ -56,6 +58,7 @@ hakusan-data-evidence:
 hakusan-otp-test:
 	python3 -m unittest \
 		scripts/test_prepare_hakusan_osm.py \
+		scripts/test_prepare_hakusan_osm_pbf.py \
 		scripts/test_prepare_hakusan_otp.py \
 		scripts/test_hakusan_otp_contract.py \
 		scripts/test_fetch_hakusan_otp_inputs.py \
@@ -68,11 +71,21 @@ hakusan-otp-fetch:
 		--repo-root . \
 		--output-dir "$(HAKUSAN_OTP_DIR)" \
 		--artifact all
+	python3 -m venv "$(HAKUSAN_OTP_TOOLS_VENV)"
+	"$(HAKUSAN_OTP_TOOLS_VENV)/bin/python" -m pip install \
+		--disable-pip-version-check \
+		--no-deps \
+		--require-hashes \
+		-r config/otp/hakusan/osmium-requirements.txt
+	"$(HAKUSAN_OTP_TOOLS_VENV)/bin/python" scripts/prepare_hakusan_osm_pbf.py \
+		--source "$(HAKUSAN_OTP_OSM_XML)" \
+		--output "$(HAKUSAN_OTP_OSM)"
 
 hakusan-otp-evidence:
 	python3 scripts/run_hakusan_otp_evidence.py \
 		--repo-root . \
 		--gtfs-zip "$(HAKUSAN_GTFS_ZIP)" \
+		--osm-source "$(HAKUSAN_OTP_OSM_XML)" \
 		--osm "$(HAKUSAN_OTP_OSM)" \
 		--otp-jar "$(HAKUSAN_OTP_JAR)" \
 		--work-dir "$(HAKUSAN_OTP_WORK_DIR)" \

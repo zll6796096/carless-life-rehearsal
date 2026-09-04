@@ -28,11 +28,13 @@ applicable translations are filtered with retained-reference validation. A new
 or unclassified route fails closed; filtering GraphQL output after building a
 larger graph is not accepted as the policy boundary.
 
-Pedestrian routing uses a canonical historical OpenStreetMap XML snapshot for
-`2026-09-03T00:00:00Z`, bounded to the reviewed pilot area. The tracked query,
-canonical hash, and ODbL 1.0 attribution are part of the source contract. The
-source is a static timetable and is not realtime; it cannot support delay,
-vehicle-position, or live-operation claims.
+Pedestrian routing starts from a canonical historical OpenStreetMap XML
+snapshot for `2026-09-03T00:00:00Z`, bounded to the reviewed pilot area. A
+hash-pinned Pyosmium 4.3.1 conversion produces the exact OSM PBF consumed by
+OTP 2.9.0. The tracked query, XML and PBF hashes, converter lock, and ODbL 1.0
+attribution are part of the source contract. The source is a static timetable
+and is not realtime; it cannot support delay, vehicle-position, or
+live-operation claims.
 
 The backend also includes an optional OpenTripPlanner GraphQL adapter for later GTFS/ODPT integration. It is disabled unless configured with environment variables.
 
@@ -44,11 +46,12 @@ Raw GTFS archives, validator reports/JARs, OSM extracts, and OTP graphs stay in
 ignored `data/external/` or operator-owned temporary storage. Only source
 identity, derived validation summaries, checksums, and policy are committed.
 
-The OTP JAR, canonical OSM, deterministic pilot ZIP, `graph.obj`, build report,
-and full OTP logs also stay in `data/external/`. The only Gate 1 output eligible
-for tracking is a sanitized JSON summary containing hashes, aggregate counts,
-allowlisted identifiers, and pass/fail evidence. It must not contain absolute
-local paths, secrets, raw GTFS rows, or mutable download URLs.
+The OTP JAR, canonical OSM XML, derived OSM PBF, converter virtual environment,
+deterministic pilot ZIP, `graph.obj`, build report, and full OTP logs also stay
+in `data/external/`. The only Gate 1 output eligible for tracking is a sanitized
+JSON summary containing hashes, aggregate counts, allowlisted identifiers, and
+pass/fail evidence. It must not contain absolute local paths, secrets, raw GTFS
+rows, or mutable download URLs.
 
 Committed fixture data must be synthetic, minimal, and clearly labeled as demo data. It must not be a copied subset of licensed feed files.
 
