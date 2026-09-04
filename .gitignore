@@ -15,5 +15,6 @@ __pycache__/
 .ruff_cache/
 coverage/
 htmlcov/
+.worktrees/
 data/raw/
 data/external/
