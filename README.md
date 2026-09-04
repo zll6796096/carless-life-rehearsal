@@ -24,12 +24,20 @@ Implemented phases:
 
 The first-stage product loop runs with fixture data and the deterministic mock router. OTP/GTFS integration is available behind configuration but is not required for the demo.
 
+Hakusan Gate 0 is now defined as an auditable data-contract boundary for the
+Hakusan City community bus `めぐーる`. The repository pins one GTFS Data
+Repository artifact, its CC BY 4.0 license, checksum, service dates, six
+destination sources, and a deny-by-default Matsuto/Mikawa route policy. This
+does not mean real routing is live: the application and deployed demo still use
+fixture/mock routing until the later OTP and product-integration gates pass.
+
 ## Monorepo Structure
 
 ```text
 .
 ├── backend/                  # FastAPI + Python 3.12-compatible + Pydantic + pytest
 ├── frontend/                 # Vite + React + TypeScript
+├── data/hakusan/             # Tracked metadata and policy; never the raw GTFS ZIP
 ├── docs/
 │   ├── architecture.md
 │   ├── data-policy.md
@@ -62,6 +70,7 @@ The app must not:
 
 ```bash
 make check-docs
+make hakusan-data-test
 make dev
 make test
 make backend-test
@@ -75,6 +84,15 @@ Local service URLs:
 - Backend health check: `http://localhost:8000/health`
 
 No production secrets or API keys are required for the initial fixture demo.
+
+To reproduce the pinned Hakusan archive and MobilityData validator evidence
+with local, untracked inputs:
+
+```bash
+make hakusan-data-evidence \
+  HAKUSAN_GTFS_ZIP=/path/to/pinned-feed.zip \
+  HAKUSAN_VALIDATOR_REPORT=/path/to/validator/report.json
+```
 
 Implemented backend API:
 

@@ -4,23 +4,32 @@
 
 Use public transportation open data responsibly while keeping the fixture demo runnable, auditable, and secret-free.
 
-## Data Sources
+## Selected Data Sources
 
-Allowed future source categories:
+The first real-data candidate is pinned in `data/hakusan/manifest.json`:
 
-- GTFS static data
-- ODPT public transportation data
-- OpenTripPlanner output derived from authorized local feeds
-- optional demand transport metadata when available and legally usable
-- fixture data created for this repository
+- 白山市コミュニティバス「めぐーる」 GTFS static feed
+- GTFS Data Repository artifact UID
+  `765cd548-a1f3-46e6-b05b-d6168b9b85d1`
+- publisher: 白山市
+- license: CC BY 4.0 (`CC-BY-4.0`)
+- service period: 2026-03-16 through 2027-03-15
+- one pharmacy POI from OpenStreetMap under ODbL; the remaining pilot
+  destinations use records from the pinned GTFS feed
 
-The phase-1 demo uses fixture data and a deterministic mock router by default.
+The current application still uses fixture data and a deterministic mock router
+by default. A pinned data contract is not evidence that OTP or production
+routing is connected.
 
 The backend also includes an optional OpenTripPlanner GraphQL adapter for later GTFS/ODPT integration. It is disabled unless configured with environment variables.
 
 ## Raw Data Redistribution
 
 The repository must not redistribute raw ODPT or challenge data.
+
+Raw GTFS archives, validator reports/JARs, OSM extracts, and OTP graphs stay in
+ignored `data/external/` or operator-owned temporary storage. Only source
+identity, derived validation summaries, checksums, and policy are committed.
 
 Committed fixture data must be synthetic, minimal, and clearly labeled as demo data. It must not be a copied subset of licensed feed files.
 
@@ -88,3 +97,23 @@ Family/admin mode may show more detail, including:
 - provider used
 
 Raw feed IDs and internal route IDs must not appear in elderly-facing memos.
+
+## Attribution
+
+The family/admin data-information surface must display:
+
+> 本サービスは、白山市が公開する「白山市コミュニティバス『めぐーる』GTFSデータ」（CC BY 4.0）を加工して利用しています。
+
+When OpenStreetMap-derived destination or pedestrian data is used, it must also
+display:
+
+> © OpenStreetMap contributors, ODbL
+
+## Pilot Route Policy
+
+`data/hakusan/route-rules.json` is deny-by-default. Only the explicitly listed
+Matsuto/Mikawa fixed routes may be considered by the first real-data pilot.
+Hakusan-roku routes outside the pilot remain unavailable, and routes identified
+by the city as reservation-required must never be presented as ordinary
+walk-up service. Missing or changed classifications produce `unknown` rather
+than a mock fallback.

@@ -49,6 +49,35 @@ If OTP is unavailable, the app returns `unknown` with a data quality warning. It
 
 `GET /data-quality` returns level, warnings, feed summary, and last checked time. When GTFS data is absent, it returns `unknown` with warnings instead of crashing.
 
+## Hakusan Data Contract
+
+`data/hakusan/` contains tracked metadata and policy only. It pins the exact
+Hakusan `めぐーる` feed UID and SHA-256, records CC BY 4.0/ODbL attribution,
+defines six destination records, classifies all 21 feed routes, and stores the
+reviewed MobilityData validator summary.
+
+The feed is a static timetable. There is no GTFS-RT endpoint, so no component
+may represent results as live operation or delay information.
+
+The contract validator is offline and uses only the Python standard library:
+
+```bash
+make hakusan-data-test
+```
+
+Reproducing raw evidence is an explicit local operation because raw archives
+and reports are not committed:
+
+```bash
+make hakusan-data-evidence \
+  HAKUSAN_GTFS_ZIP=/path/to/pinned-feed.zip \
+  HAKUSAN_VALIDATOR_REPORT=/path/to/validator/report.json
+```
+
+This Gate 0 contract does not change runtime routing. `ROUTING_PROVIDER=mock`
+remains the current demo default until the OTP integration plan is executed and
+verified.
+
 ## Frontend
 
 Implemented routes:

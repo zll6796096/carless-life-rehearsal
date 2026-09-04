@@ -16,16 +16,38 @@ The problem is not only whether a route exists. The important question is whethe
 
 ## Public Transport Open Data Use
 
-Planned data use:
+Selected data for the first real-data pilot:
 
-- stops and station locations
-- route and timetable data
-- transfer and waiting information
-- service calendar information
-- optional demand transport availability
-- data quality warnings from GTFS validator output or lightweight internal checks
+- 白山市コミュニティバス「めぐーる」 GTFS from the GTFS Data Repository
+- pinned artifact UID `765cd548-a1f3-46e6-b05b-d6168b9b85d1`
+- CC BY 4.0, valid from 2026-03-16 through 2027-03-15
+- 21 routes, 208 trips, and 335 stops in the source feed
+- a Matsuto/Mikawa fixed-route pilot selected through a deny-by-default policy
+- six auditable everyday destinations; the pharmacy POI uses OpenStreetMap ODbL
 
-Phase 1 uses fixture data and a mock router so that the product loop can be evaluated before ODPT/GTFS integration.
+MobilityData GTFS Validator 8.0.1 reported zero ERROR notices. The committed
+summary retains all three WARNING groups rather than hiding them. The single
+`stop_too_far_from_shape` notice affects `瀬波` on a reservation-required route
+outside the pilot.
+
+The source has no GTFS-RT endpoints. Any later user-facing result must say it is
+a static timetable and must not claim live delay or vehicle information.
+
+The current public demo still uses fixture/mock routing. It is not yet valid
+evidence of real GTFS use; that claim requires the later OTP, API, browser, and
+release gates.
+
+## Elderly-Mobility Evidence
+
+Hakusan City states that `めぐーる` primarily serves transport-blank and
+transport-inconvenient areas and supports elderly outings, hospital visits, and
+shopping. It also provides a free-pass application path for residents aged 70+
+and residents aged 65+ who voluntarily returned a driver's license.
+
+Some Hakusan-roku services require telephone booking by 17:00 on the previous
+day. They are excluded from the first pilot and must display:
+
+> 予約が必要なため、今回の自動判定対象外です。
 
 ## Innovation Point
 
@@ -54,9 +76,14 @@ to:
 
 ## Free Public Availability
 
-The contest demo should be publicly available without requiring production secrets or user-owned API keys. The fixture demo must work with mock routing.
+The contest service should be publicly available without requiring production
+secrets or user-owned API keys. The fixture demo may remain available as a
+clearly labelled development mode, but the submitted production evidence must
+use the pinned real feed and must not silently fall back to mock routing.
 
-Future deployments may support optional OTP/GTFS configuration by environment variables, but that must not block the basic contest demo.
+OTP/GTFS may remain optional only for clearly labelled local fixture
+development. The submitted production service must require the real routing
+provider and fail closed when it or the pinned data is unavailable.
 
 ## Limitations
 
@@ -75,9 +102,17 @@ The app only provides mobility feasibility information.
 
 Contest-facing evidence should include:
 
-- product demo with fixture data
+- product demo with pinned Hakusan GTFS and OTP routing
 - explanation of deterministic routing boundary
-- data quality warning examples
+- feed UID, SHA-256, license, service dates, and validator evidence
+- proof that reservation-required and out-of-pilot routes fail closed
 - elderly voice-first UI
 - family/admin map report
 - technical notes on FastAPI, React, OTP adapter, MapLibre, and Web Speech API
+
+## Official Sources
+
+- GTFS metadata: <https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru>
+- Hakusan City service and reservation rules: <https://www.city.hakusan.lg.jp/machi/kotsu/1007749/index.html>
+- Challenge entry conditions: <https://challenge2026.odpt.org/ja/entry.html>
+- Challenge schedule and evaluation criteria: <https://challenge2026.odpt.org/ja/outline.html>

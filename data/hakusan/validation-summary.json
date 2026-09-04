@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "feed_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+  "archive_sha256": "ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740",
+  "validator": {
+    "name": "MobilityData GTFS Validator",
+    "version": "8.0.1",
+    "country_code": "JP",
+    "validated_at": "2026-09-04T23:05:50+09:00"
+  },
+  "counts": {"Agencies": 1, "Routes": 21, "Trips": 208, "Stops": 335, "Shapes": 94, "Blocks": 55},
+  "error_count": 0,
+  "warning_count": 17569,
+  "notices": [
+    {"severity": "WARNING", "code": "mixed_case_recommended_field", "count": 78},
+    {"severity": "WARNING", "code": "non_ascii_or_non_printable_char", "count": 17490},
+    {"severity": "WARNING", "code": "stop_too_far_from_shape", "count": 1}
+  ],
+  "warning_review": [
+    {"code": "mixed_case_recommended_field", "disposition": "accepted_non_blocking", "note": "Recommended-field casing does not prevent OTP ingestion."},
+    {"code": "non_ascii_or_non_printable_char", "disposition": "accepted_non_blocking", "note": "The notices are dominated by Japanese identifiers and names; the application preserves Japanese source text."},
+    {"code": "stop_too_far_from_shape", "disposition": "excluded_from_pilot", "note": "The single notice affects stop 瀬波 on trip 平日_11時20分_系統21011 in a reservation-required route excluded from the pilot."}
+  ]
+}

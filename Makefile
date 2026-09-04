@@ -1,4 +1,7 @@
-.PHONY: check-docs dev test backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run deploy-config-test git-deploy
+.PHONY: check-docs dev test hakusan-data-test hakusan-data-evidence backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run deploy-config-test git-deploy
+
+HAKUSAN_GTFS_ZIP ?= data/external/hakusan/feed.zip
+HAKUSAN_VALIDATOR_REPORT ?= data/external/hakusan/validator/report.json
 
 REQUIRED_DOCS := README.md \
 	docs/product-blueprint.md \
@@ -25,12 +28,22 @@ check-docs:
 dev:
 	docker compose up --build
 
-test: check-docs
+test: check-docs hakusan-data-test
 	$(MAKE) backend-test
 	$(MAKE) backend-lint
 	$(MAKE) frontend-test
 	$(MAKE) frontend-build
 	$(MAKE) frontend-lint
+
+hakusan-data-test:
+	python3 -m unittest scripts/test_validate_hakusan_data.py
+	python3 scripts/validate_hakusan_data.py
+	bash scripts/test_hakusan_docs.sh
+
+hakusan-data-evidence:
+	python3 scripts/validate_hakusan_data.py --require-evidence \
+		--gtfs-zip "$(HAKUSAN_GTFS_ZIP)" \
+		--validator-report "$(HAKUSAN_VALIDATOR_REPORT)"
 
 backend-test:
 	cd backend && uv run pytest

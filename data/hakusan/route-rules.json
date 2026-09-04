@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "pilot_area_id": "hakusan-matto-mikawa",
+  "default_policy": "deny",
+  "expected_feed_route_count": 21,
+  "policy_note_ja": "松任・美川地域の固定路線だけを自動判定対象とし、対象外路線は明示的に許可されるまで利用しません。",
+  "reservation_source": {
+    "url": "https://www.city.hakusan.lg.jp/machi/kotsu/1007749/index.html",
+    "checked_at": "2026-09-04",
+    "deadline_ja": "利用前日の午後5時までに電話予約が必要"
+  },
+  "allowed_routes": [
+    {"route_id": "めぐーる北ルート_A", "name_ja": "めぐーる北ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる東ルート_A", "name_ja": "めぐーる東ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる南ルート_A", "name_ja": "めぐーる南ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる南西ルート_A", "name_ja": "めぐーる南西ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる北循環ルート_A", "name_ja": "めぐーる北循環ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる南循環ルート_A", "name_ja": "めぐーる南循環ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる松任美川ルート_A", "name_ja": "めぐーる松任美川ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる美川・湊ルート_A", "name_ja": "めぐーる美川・湊ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる中央病院ルート_A", "name_ja": "めぐーる中央病院ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる西ルート_A", "name_ja": "めぐーる西ルート", "service_type": "fixed_route"},
+    {"route_id": "めぐーる北西ルート_A", "name_ja": "めぐーる北西ルート", "service_type": "fixed_route"}
+  ],
+  "excluded_routes": [
+    {"route_id": "めぐーる尾口ルート_A", "name_ja": "めぐーる尾口ルート", "reason_code": "reservation_required", "user_message_ja": "予約が必要なため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる診療所・温泉ルート（白山下）_A", "name_ja": "めぐーる診療所・温泉ルート（白山下）", "reason_code": "reservation_required", "user_message_ja": "予約が必要なため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる診療所・温泉ルート（吉野）_A", "name_ja": "めぐーる診療所・温泉ルート（吉野）", "reason_code": "reservation_required", "user_message_ja": "予約が必要なため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる白山ルート_A", "name_ja": "めぐーる白山ルート", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる舘畑ルート_A", "name_ja": "めぐーる舘畑ルート", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる蔵山・林ルート_A", "name_ja": "めぐーる蔵山・林ルート", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる河内ルート（千丈温泉）_A", "name_ja": "めぐーる河内ルート（千丈温泉）", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる河内ルート（吉岡）_A", "name_ja": "めぐーる河内ルート（吉岡）", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる上野・阿手ルート_A", "name_ja": "めぐーる上野・阿手ルート", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"},
+    {"route_id": "めぐーる つるぎ病院ルート_A", "name_ja": "めぐーる つるぎ病院ルート", "reason_code": "outside_pilot_area", "user_message_ja": "現在の実証地域外のため、今回の自動判定対象外です。"}
+  ]
+}

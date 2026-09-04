@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "pilot_area": {
+    "id": "hakusan-matto-mikawa",
+    "name_ja": "白山市 松任・美川地域"
+  },
+  "required_categories": [
+    "supermarket",
+    "hospital",
+    "pharmacy",
+    "city_hall",
+    "station",
+    "social"
+  ],
+  "destinations": [
+    {
+      "id": "supermarket-osakaya-matto",
+      "category": "supermarket",
+      "name_ja": "大阪屋ショップ松任店",
+      "location": {"lat": 36.5297987884782, "lon": 136.577520243345},
+      "access_stop_ids": ["15_01"],
+      "source": {
+        "type": "gtfs_stop",
+        "feed_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+        "stop_id": "15_01",
+        "url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru",
+        "license": "CC-BY-4.0"
+      }
+    },
+    {
+      "id": "hospital-matto-ishikawa-chuo",
+      "category": "hospital",
+      "name_ja": "公立松任石川中央病院",
+      "location": {"lat": 36.5106366666667, "lon": 136.565739047619},
+      "access_stop_ids": ["24_01"],
+      "source": {
+        "type": "gtfs_stop",
+        "feed_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+        "stop_id": "24_01",
+        "url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru",
+        "license": "CC-BY-4.0"
+      }
+    },
+    {
+      "id": "pharmacy-kusuri-aoki-nunoichi",
+      "category": "pharmacy",
+      "name_ja": "クスリのアオキ 布市店",
+      "location": {"lat": 36.5236, "lon": 136.5716559},
+      "access_stop_ids": ["136_01"],
+      "source": {
+        "type": "openstreetmap",
+        "element_type": "way",
+        "element_id": 604481354,
+        "element_version": 1,
+        "element_timestamp": "2018-07-03T06:38:44Z",
+        "changeset": 60366907,
+        "url": "https://www.openstreetmap.org/way/604481354",
+        "api_url": "https://api.openstreetmap.org/api/0.6/way/604481354/1.json",
+        "license": "ODbL-1.0",
+        "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+        "snapshot_at": "2026-09-04T14:16:21Z"
+      }
+    },
+    {
+      "id": "city-hall-hakusan",
+      "category": "city_hall",
+      "name_ja": "市役所",
+      "location": {"lat": 36.5142150318749, "lon": 136.565809249878},
+      "access_stop_ids": ["23_01"],
+      "source": {
+        "type": "gtfs_stop",
+        "feed_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+        "stop_id": "23_01",
+        "url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru",
+        "license": "CC-BY-4.0"
+      }
+    },
+    {
+      "id": "station-matto",
+      "category": "station",
+      "name_ja": "松任駅",
+      "location": {"lat": 36.526405, "lon": 136.566388571428},
+      "access_stop_ids": ["17_01"],
+      "source": {
+        "type": "gtfs_stop",
+        "feed_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+        "stop_id": "17_01",
+        "url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru",
+        "license": "CC-BY-4.0"
+      }
+    },
+    {
+      "id": "social-fukushi-fureai",
+      "category": "social",
+      "name_ja": "福祉ふれあいセンター",
+      "location": {"lat": 36.5147233333333, "lon": 136.572942380952},
+      "access_stop_ids": ["69_01"],
+      "source": {
+        "type": "gtfs_stop",
+        "feed_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+        "stop_id": "69_01",
+        "url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru",
+        "license": "CC-BY-4.0"
+      }
+    }
+  ]
+}

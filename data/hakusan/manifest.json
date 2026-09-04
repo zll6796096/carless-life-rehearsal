@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "dataset_key": "hakusan_meguru_20260316",
+  "feed": {
+    "organization_id": "hakusancity",
+    "feed_id": "hakusan_bus_meguru",
+    "name_ja": "白山市コミュニティバス「めぐーる」",
+    "publisher_name": "白山市",
+    "repository_metadata_url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru",
+    "source_page_url": "https://www.city.hakusan.lg.jp/machi/kotsu/1007749/index.html",
+    "license": {
+      "name": "CC BY 4.0",
+      "spdx_id": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/deed.ja"
+    },
+    "artifact": {
+      "uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+      "download_url": "https://api.gtfs-data.jp/v2/organizations/hakusancity/feeds/hakusan_bus_meguru/files/feed.zip?uid=765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+      "sha256": "ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740",
+      "published_at": "2026-03-11T14:49:59.101917+09:00",
+      "service_start_date": "2026-03-16",
+      "service_end_date": "2027-03-15",
+      "feed_version": "20260316_2026年03月16日（R8.3めぐーる改正） その筋屋 1.664",
+      "required_files": [
+        "agency.txt",
+        "calendar.txt",
+        "calendar_dates.txt",
+        "fare_attributes.txt",
+        "fare_rules.txt",
+        "feed_info.txt",
+        "routes.txt",
+        "shapes.txt",
+        "stop_times.txt",
+        "stops.txt",
+        "translations.txt",
+        "trips.txt"
+      ]
+    },
+    "realtime": {
+      "available": false,
+      "trip_updates_url": null,
+      "vehicle_positions_url": null,
+      "alerts_url": null,
+      "user_facing_label_ja": "静的時刻表（リアルタイム運行情報ではありません）"
+    }
+  },
+  "contest": {
+    "name": "公共交通オープンデータチャレンジ2026",
+    "eligibility_url": "https://challenge2026.odpt.org/ja/entry.html",
+    "schedule_url": "https://challenge2026.odpt.org/ja/outline.html",
+    "submission_deadline": "2027-01-11T23:59:00+09:00",
+    "contest_end_date": "2027-03-12"
+  },
+  "validation": {
+    "validator_name": "MobilityData GTFS Validator",
+    "validator_version": "8.0.1",
+    "validated_at": "2026-09-04T23:05:50+09:00",
+    "country_code": "JP",
+    "summary_file": "validation-summary.json"
+  },
+  "attribution": {
+    "gtfs_ja": "本サービスは、白山市が公開する「白山市コミュニティバス『めぐーる』GTFSデータ」（CC BY 4.0）を加工して利用しています。",
+    "openstreetmap_ja": "© OpenStreetMap contributors, ODbL"
+  }
+}
