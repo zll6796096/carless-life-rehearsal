@@ -38,7 +38,7 @@ product, runtime-provider, frontend, deployment, or data-policy boundary.
 - Create: `scripts/test_prepare_hakusan_osm.py`
 - Create: `scripts/prepare_hakusan_osm.py`
 
-- [ ] **Step 1: Write the canonicalization tests**
+- [x] **Step 1: Write the canonicalization tests**
 
 Create two semantically identical OSM XML fixtures that differ in `generator`,
 `osm_base`, contributor `user`/`uid`, top-level element order, and tag order.
@@ -66,7 +66,7 @@ class CanonicalOsmTests(unittest.TestCase):
             canonicalize_osm(source, self.root / "out.osm", BOUNDS)
 ```
 
-- [ ] **Step 2: Run the tests and verify RED**
+- [x] **Step 2: Run the tests and verify RED**
 
 Run:
 
@@ -76,7 +76,7 @@ python3 -m unittest scripts/test_prepare_hakusan_osm.py
 
 Expected: import failure because `scripts.prepare_hakusan_osm` does not exist.
 
-- [ ] **Step 3: Implement minimal canonicalization**
+- [x] **Step 3: Implement minimal canonicalization**
 
 Expose this public API and CLI:
 
@@ -101,13 +101,13 @@ Implementation rules:
 - emit fixed root attributes and the caller-supplied bounds;
 - write through a temporary sibling and `Path.replace()` only on success.
 
-- [ ] **Step 4: Run the tests and verify GREEN**
+- [x] **Step 4: Run the tests and verify GREEN**
 
 Run: `python3 -m unittest scripts/test_prepare_hakusan_osm.py`
 
 Expected: all canonical OSM tests pass.
 
-- [ ] **Step 5: Commit Task 1**
+- [x] **Step 5: Commit Task 1**
 
 ```bash
 git add scripts/test_prepare_hakusan_osm.py scripts/prepare_hakusan_osm.py
@@ -121,7 +121,7 @@ git commit -m "feat: canonicalize Hakusan OSM snapshots"
 - Create: `scripts/test_prepare_hakusan_otp.py`
 - Create: `scripts/prepare_hakusan_otp.py`
 
-- [ ] **Step 1: Write source-hash and route-filter tests**
+- [x] **Step 1: Write source-hash and route-filter tests**
 
 Build a complete synthetic 12-file GTFS containing one allowed and one excluded
 route. Tests must assert source SHA enforcement and exact dependent-table
@@ -146,13 +146,13 @@ class PilotGtfsTests(unittest.TestCase):
         self.assertNotIn("excluded-stop", summary["stop_ids"])
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `python3 -m unittest scripts/test_prepare_hakusan_otp.py`
 
 Expected: import failure because `scripts.prepare_hakusan_otp` does not exist.
 
-- [ ] **Step 3: Implement filtering and referential validation**
+- [x] **Step 3: Implement filtering and referential validation**
 
 Expose:
 
@@ -179,7 +179,7 @@ Apply the exact table rules from the approved design. Write every required file
 with UTF-8, LF, source column order, source row order, ZIP entry order from the
 Gate 0 manifest, `ZIP_DEFLATED`, and timestamp `(1980, 1, 1, 0, 0, 0)`.
 
-- [ ] **Step 4: Add determinism, destination, and failure tests**
+- [x] **Step 4: Add determinism, destination, and failure tests**
 
 Add independent tests proving:
 
@@ -202,13 +202,13 @@ def test_unclassified_route_fails_closed(self) -> None:
 Also cover missing allowlisted routes, broken trip/stop/shape/service/fare
 references, parent-station recursion, and filtered route/stop/trip translations.
 
-- [ ] **Step 5: Run Task 2 tests and verify GREEN**
+- [x] **Step 5: Run Task 2 tests and verify GREEN**
 
 Run: `python3 -m unittest scripts/test_prepare_hakusan_otp.py`
 
 Expected: all GTFS preparation tests pass.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 ```bash
 git add scripts/test_prepare_hakusan_otp.py scripts/prepare_hakusan_otp.py
@@ -229,7 +229,7 @@ git commit -m "feat: derive allowlisted Hakusan GTFS"
 - Create: `scripts/test_hakusan_otp_contract.py`
 - Create: `scripts/validate_hakusan_otp_contract.py`
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 Test immutable OTP identity, Java version, config hashes, historical OSM query,
 license, expected counts, scenario dates, and SHA formats:
@@ -250,13 +250,13 @@ class OtpContractTests(unittest.TestCase):
         self.assertIn("OTP build-config sha256 mismatch", validate_otp_contract(self.root))
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `python3 -m unittest scripts/test_hakusan_otp_contract.py`
 
 Expected: import failure because the contract validator does not exist.
 
-- [ ] **Step 3: Add the three tracked configurations**
+- [x] **Step 3: Add the three tracked configurations**
 
 `osm-overpass.ql` must contain exactly the approved historical date and bbox,
 and select highway ways plus restriction relations and their members.
@@ -280,7 +280,7 @@ and select highway ways plus restriction relations and their members.
 }
 ```
 
-- [ ] **Step 4: Canonicalize the real historical OSM snapshot**
+- [x] **Step 4: Canonicalize the real historical OSM snapshot**
 
 Run:
 
@@ -296,7 +296,7 @@ shasum -a 256 data/external/hakusan/otp/hakusan-20260903-canonical.osm
 Expected: canonicalization succeeds and prints a lowercase 64-character
 SHA-256. Record that exact value in `otp-sources.json`.
 
-- [ ] **Step 4a: Convert the canonical XML to the pinned OTP PBF**
+- [x] **Step 4a: Convert the canonical XML to the pinned OTP PBF**
 
 Create an ignored virtual environment, install Pyosmium 4.3.1 using
 `--no-deps --require-hashes` and `config/otp/hakusan/osmium-requirements.txt`,
@@ -304,7 +304,7 @@ then run `scripts/prepare_hakusan_osm_pbf.py`. Tests must prove source hash,
 converter version, output filename, output size/hash, atomic replacement, and
 valid-cache reuse. Record the exact PBF hash and size in `otp-sources.json`.
 
-- [ ] **Step 5: Add the source contract and validator**
+- [x] **Step 5: Add the source contract and validator**
 
 The manifest must pin:
 
@@ -325,13 +325,13 @@ def validate_otp_contract(repo_root: Path) -> list[str]:
     """Return all committed source/config contract errors."""
 ```
 
-- [ ] **Step 6: Run contract tests and verify GREEN**
+- [x] **Step 6: Run contract tests and verify GREEN**
 
 Run: `python3 -m unittest scripts/test_hakusan_otp_contract.py`
 
 Expected: all contract tests pass.
 
-- [ ] **Step 7: Commit Task 3**
+- [x] **Step 7: Commit Task 3**
 
 ```bash
 git add config/otp/hakusan data/hakusan/otp-sources.json \
@@ -346,7 +346,7 @@ git commit -m "feat: pin Hakusan OTP build sources"
 - Create: `scripts/test_fetch_hakusan_otp_inputs.py`
 - Create: `scripts/fetch_hakusan_otp_inputs.py`
 
-- [ ] **Step 1: Write failing download tests**
+- [x] **Step 1: Write failing download tests**
 
 Use fake HTTP responses and assert immutable URL validation, redirect-host
 validation, atomic writes, checksum mismatch cleanup, and cached-file reuse:
@@ -366,13 +366,13 @@ class FetchInputsTests(unittest.TestCase):
             download_checked(SOURCE, self.root / "otp.jar", sha256_bytes(b"asset"), opener=lambda _: response)
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `python3 -m unittest scripts/test_fetch_hakusan_otp_inputs.py`
 
 Expected: import failure because the fetcher does not exist.
 
-- [ ] **Step 3: Implement checked JAR and OSM acquisition**
+- [x] **Step 3: Implement checked JAR and OSM acquisition**
 
 Expose:
 
@@ -395,13 +395,13 @@ OTP redirects are limited to `github.com` and proper
 deletes the newly fetched raw file on validation failure. Existing canonical
 files are reused only after validation.
 
-- [ ] **Step 4: Run fetcher tests and verify GREEN**
+- [x] **Step 4: Run fetcher tests and verify GREEN**
 
 Run: `python3 -m unittest scripts/test_fetch_hakusan_otp_inputs.py`
 
 Expected: all acquisition tests pass without network access.
 
-- [ ] **Step 5: Commit Task 4**
+- [x] **Step 5: Commit Task 4**
 
 ```bash
 git add scripts/test_fetch_hakusan_otp_inputs.py scripts/fetch_hakusan_otp_inputs.py
@@ -415,7 +415,7 @@ git commit -m "feat: acquire pinned Hakusan OTP inputs"
 - Create: `scripts/test_run_hakusan_otp_evidence.py`
 - Create: `scripts/run_hakusan_otp_evidence.py`
 
-- [ ] **Step 1: Write failing pure validation tests**
+- [x] **Step 1: Write failing pure validation tests**
 
 Use captured payload-shaped fixtures for route inventory, stops, and
 `planConnection` itineraries:
@@ -439,13 +439,13 @@ Also test GraphQL errors, routing errors, no itinerary, no WALK, no BUS,
 missing route IDs, stop inventory gaps, Java major mismatch, config-warning log
 scan, and sanitized relative-path evidence.
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `python3 -m unittest scripts/test_run_hakusan_otp_evidence.py`
 
 Expected: import failure because the evidence runner does not exist.
 
-- [ ] **Step 3: Implement query and validation helpers**
+- [x] **Step 3: Implement query and validation helpers**
 
 Expose the `PlanEvidence` dataclass, the exact `normalize_gtfs_id` helper below,
 and these stable typed functions: `validate_route_inventory(payload: object,
@@ -471,7 +471,7 @@ Use the non-deprecated `planConnection` query with `transitOnly: true`, WALK
 access/egress/transfer, and BUS transit. Inventory queries request only
 `gtfsId` and route names or stop names.
 
-- [ ] **Step 4: Implement bounded orchestration**
+- [x] **Step 4: Implement bounded orchestration**
 
 The CLI accepts explicit `--gtfs-zip`, `--osm-source`, `--osm`, `--otp-jar`,
 `--work-dir`, `--summary-output`, `--port`, `--startup-timeout`, and
@@ -494,13 +494,13 @@ terminate then kill-on-timeout in finally
 No success summary is written until the Java process is confirmed stopped and
 all validations pass.
 
-- [ ] **Step 5: Run evidence-runner tests and verify GREEN**
+- [x] **Step 5: Run evidence-runner tests and verify GREEN**
 
 Run: `python3 -m unittest scripts/test_run_hakusan_otp_evidence.py`
 
 Expected: all validation and orchestration-helper tests pass.
 
-- [ ] **Step 6: Commit Task 5**
+- [x] **Step 6: Commit Task 5**
 
 ```bash
 git add scripts/test_run_hakusan_otp_evidence.py scripts/run_hakusan_otp_evidence.py
@@ -518,7 +518,7 @@ git commit -m "feat: verify Hakusan OTP graph evidence"
 - Modify: `docs/technical-notes.md`
 - Modify: `docs/open-data-challenge-2026-fit.md`
 
-- [ ] **Step 1: Write and run the failing documentation gate**
+- [x] **Step 1: Write and run the failing documentation gate**
 
 Require these exact markers:
 
@@ -537,20 +537,20 @@ Run: `bash scripts/test_hakusan_otp_docs.sh`
 
 Expected: failure until Make targets and documentation are present.
 
-- [ ] **Step 2: Add Make targets**
+- [x] **Step 2: Add Make targets**
 
 Add `hakusan-otp-test` to the normal `test` dependency chain. It runs all six
 new Python test modules, committed contract validation, and the documentation
 gate. Add explicit `hakusan-otp-fetch` and `hakusan-otp-evidence` targets with
 operator-overridable artifact paths; neither runs in `make test`.
 
-- [ ] **Step 3: Document exact operator workflow and boundaries**
+- [x] **Step 3: Document exact operator workflow and boundaries**
 
 Document acquisition, canonicalization, pilot-feed preparation, evidence
 execution, attribution, static-timetable limitations, ignored artifacts,
 2 GiB/timeout guards, and that Gate 1 leaves the backend on mock routing.
 
-- [ ] **Step 4: Run documentation and offline Gate 1 tests**
+- [x] **Step 4: Run documentation and offline Gate 1 tests**
 
 Run:
 
@@ -561,7 +561,7 @@ make hakusan-otp-test
 
 Expected: both commands pass with no network or Java process.
 
-- [ ] **Step 5: Commit Task 6**
+- [x] **Step 5: Commit Task 6**
 
 ```bash
 git add Makefile README.md docs/data-policy.md docs/technical-notes.md \
@@ -576,7 +576,7 @@ git commit -m "docs: add Hakusan OTP Gate 1 workflow"
 - Create: `data/hakusan/otp-validation-summary.json`
 - Modify only if evidence finds a factual mismatch: `data/hakusan/otp-sources.json`
 
-- [ ] **Step 1: Acquire and verify the pinned OTP and OSM inputs**
+- [x] **Step 1: Acquire and verify the pinned OTP and OSM inputs**
 
 Run:
 
@@ -589,7 +589,7 @@ Expected: file size `183261367` and SHA-256
 for the JAR, plus canonical XML and derived PBF inputs matching their committed
 hashes. The converter environment and all artifacts remain ignored.
 
-- [ ] **Step 2: Verify real source inputs**
+- [x] **Step 2: Verify real source inputs**
 
 Run:
 
@@ -602,7 +602,7 @@ python3 scripts/validate_hakusan_otp_contract.py
 
 Expected: Gate 0 evidence and Gate 1 source contract both pass.
 
-- [ ] **Step 3: Build, start, query, and stop real OTP**
+- [x] **Step 3: Build, start, query, and stop real OTP**
 
 Run:
 
@@ -618,7 +618,7 @@ Expected: graph build succeeds, exactly 11 routes and six access stops are
 observed, outbound and return plans each contain WALK and BUS, all route IDs are
 allowlisted, the OTP process is stopped, and the sanitized summary is written.
 
-- [ ] **Step 4: Inspect evidence and ignored-artifact boundary**
+- [x] **Step 4: Inspect evidence and ignored-artifact boundary**
 
 Run:
 
@@ -632,7 +632,7 @@ git check-ignore -v data/external/hakusan/otp/graph.obj
 Expected: only the small JSON summary is trackable; all raw/build artifacts are
 ignored and the summary contains no absolute local path.
 
-- [ ] **Step 5: Commit Task 7**
+- [x] **Step 5: Commit Task 7**
 
 ```bash
 git add data/hakusan/otp-validation-summary.json
@@ -645,7 +645,7 @@ git commit -m "test: record Hakusan OTP Gate 1 evidence"
 **Files:**
 - Modify: `docs/superpowers/plans/2026-09-05-hakusan-otp-gate1.md` (checkboxes and execution evidence only)
 
-- [ ] **Step 1: Run all focused and repository gates fresh**
+- [x] **Step 1: Run all focused and repository gates fresh**
 
 Run:
 
@@ -661,7 +661,7 @@ git diff --check
 Expected: every command exits zero; existing Starlette/httpx and MapLibre chunk
 warnings may remain documented but no Gate 1 failure is allowed.
 
-- [ ] **Step 2: Review scope and provenance**
+- [x] **Step 2: Review scope and provenance**
 
 Run:
 
@@ -675,7 +675,7 @@ git log --oneline --decorate main..HEAD
 Confirm no backend/frontend/runtime/cloud file changed, no raw artifact is
 tracked, and every implementation commit belongs to Gate 1.
 
-- [ ] **Step 3: Record execution evidence and commit the plan closeout**
+- [x] **Step 3: Record execution evidence and commit the plan closeout**
 
 Update this plan with exact test counts, graph/query evidence, warnings, and
 remaining Gate 2 boundary, then run:
@@ -686,8 +686,56 @@ git diff --cached --check
 git commit -m "docs: close Hakusan OTP Gate 1 plan"
 ```
 
-- [ ] **Step 4: Use the finishing workflow**
+- [x] **Step 4: Use the finishing workflow**
 
 Invoke `finishing-a-development-branch`, re-run its required verification, and
 present the local merge, PR, keep, or discard choices. Do not push or deploy
 without a new explicit user choice.
+
+## Execution evidence (2026-09-05 JST)
+
+- Gate 0 real-source verification passed for GTFS SHA-256
+  `ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740`
+  and the pinned MobilityData validator report.
+- The initial real build correctly failed when OTP 2.9.0 sent canonical XML to
+  its binary PBF parser. JAR inspection plus two byte-identical Pyosmium 4.3.1
+  conversions isolated the format mismatch. The fixed workflow verifies XML
+  SHA-256 `81989628fee073e360aa390c718151af12456fdb66c752055e1d7b38e3b437df`
+  and PBF SHA-256
+  `4414aaee7b21b1f264f26ebd9dae6bd79cc1efa5c1b04287802b8a130d66b634`.
+- The final real run used OTP 2.9.0, Java 25.0.3, a 2 GiB heap cap, and
+  `127.0.0.1:18081`. It built 29,726 vertices, 87,801 edges, 205 stops, and 40
+  transit patterns; the server then terminated normally.
+- GraphQL exposed exactly the 11 allowlisted routes and all six required access
+  stop IDs. The hospital outbound itinerary was WALK+BUS on
+  `めぐーる南ルート_A` in 1,210 seconds; the return was BUS+WALK on the same
+  route in 1,469 seconds. No excluded route appeared.
+- The sanitized tracked evidence is
+  `data/hakusan/otp-validation-summary.json`; it contains no absolute path,
+  mutable URL, raw feed row, or secret. JAR, XML, PBF, converter environment,
+  graph, reports, and logs are all ignored under `data/external/`.
+- Fresh gates passed: 11 Gate 0 unit tests, 54 Gate 1 unit tests and contract/docs
+  checks, 19 backend tests, 32 frontend tests, backend/frontend lint, and the
+  production frontend build. `git diff --check` also passed.
+- Scope review found changes only in Gate 1 source contracts, configs, scripts,
+  evidence, Make targets, and documentation. Backend, frontend,
+  `ROUTING_PROVIDER`, Docker, Cloud Build, and deployment files are unchanged.
+
+### Remaining risks and Gate 2 boundary
+
+- OTP reported three pruned walk islands at stops `24_01`, `25_01`, and
+  `69_01`; `24_01` and `69_01` are hospital/social access stops. The hospital
+  exact-coordinate scenario passed, but all six destination categories still
+  need realistic-origin routing tests before a runtime switch.
+- OTP reported five stops (`2_01`, `3_01`, `5_01`, `6_01`, `7_01`) with no
+  nearby transfer stop. This is a data-quality observation, not evidence of a
+  failed hospital scenario.
+- OTP/Java emitted upstream `sun.misc.Unsafe` deprecation warnings. Repository
+  tests also retain the existing Starlette/httpx deprecation and MapLibre chunk
+  size warnings; none was introduced as a Gate 1 functional failure.
+- The converter acquisition was proven on the current CPython 3.14 macOS arm64
+  host. Cross-platform/Python-version converter reproducibility needs its own
+  CI acceptance before it can be called portable.
+- Gate 1 remains static-timetable local evidence only. Realtime claims,
+  backend-provider activation, elderly-facing usability acceptance, deployment,
+  challenge submission, and public release remain separate decisions.
