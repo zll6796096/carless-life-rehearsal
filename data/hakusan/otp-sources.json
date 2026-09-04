@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "contract_id": "hakusan-otp-gate1-v1",
+  "otp": {
+    "version": "2.9.0",
+    "artifact_url": "https://github.com/opentripplanner/OpenTripPlanner/releases/download/v2.9.0/otp-shaded-2.9.0.jar",
+    "artifact_filename": "otp-shaded-2.9.0.jar",
+    "sha256": "112824122cd1a89e2dff6b5b3088ffbd4f04c3c0a400ca9f08f17b762f5325f6",
+    "size_bytes": 183261367,
+    "java_major": 25
+  },
+  "gtfs": {
+    "source_uid": "765cd548-a1f3-46e6-b05b-d6168b9b85d1",
+    "source_sha256": "ea1a0108c4a7f24215aa1b3811a267d85abf9777a356b8c7b3ff857edbcae740",
+    "pilot_filename": "hakusan-meguru-fixed-routes.zip",
+    "expected": {
+      "route_count": 11,
+      "trip_count": 115,
+      "stop_time_count": 2867,
+      "stop_count": 205
+    }
+  },
+  "osm": {
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "query_path": "config/otp/hakusan/osm-overpass.ql",
+    "query_sha256": "76f960f09572b668beebfb54b38718b2ed0822e860258692fd15986c97ba1990",
+    "historical_timestamp": "2026-09-03T00:00:00Z",
+    "bbox": {
+      "south": 36.44917,
+      "west": 136.4535465,
+      "north": 36.58471,
+      "east": 136.622339
+    },
+    "canonical_filename": "hakusan-20260903-canonical.osm",
+    "canonical_sha256": "81989628fee073e360aa390c718151af12456fdb66c752055e1d7b38e3b437df",
+    "canonical_size_bytes": 14815819,
+    "license": {
+      "name": "Open Database License 1.0",
+      "spdx_id": "ODbL-1.0",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/"
+    }
+  },
+  "config": {
+    "build_config_path": "config/otp/hakusan/build-config.json",
+    "build_config_sha256": "0e0e3c3f49f72ef026386001f680eab1f1445b1312f2a8d7dad5c3287968aacd",
+    "router_config_path": "config/otp/hakusan/router-config.json",
+    "router_config_sha256": "d5b21f29f847303b6e7ecef50e6b05bf8a101a5971cf2e466dd3b60c15711b41"
+  },
+  "runtime": {
+    "host": "127.0.0.1",
+    "port": 18081,
+    "graphql_endpoint_path": "/otp/gtfs/v1",
+    "max_heap_mb": 2048,
+    "startup_timeout_seconds": 120
+  },
+  "scenario": {
+    "service_date": "2026-09-08",
+    "outbound_time": "06:50:00+09:00",
+    "return_time": "11:00:00+09:00",
+    "origin": {
+      "label": "松任駅西側の住宅地テスト地点",
+      "lat": 36.52725,
+      "lon": 136.5605
+    },
+    "destination_id": "hospital-matto-ishikawa-chuo"
+  }
+}
