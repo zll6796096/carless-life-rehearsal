@@ -25,6 +25,14 @@ Selected data for the first real-data pilot:
 - a Matsuto/Mikawa fixed-route pilot selected through a deny-by-default policy
 - six auditable everyday destinations; the pharmacy POI uses OpenStreetMap ODbL
 
+Hakusan Gate 1 turns that policy into a reproducible local OTP evidence path.
+Before graph construction it derives exactly 11 fixed routes, 115 trips, 2,867
+stop-times, and 205 stops. It pins OpenTripPlanner 2.9.0, Java 25, and a
+historical OSM/ODbL street snapshot, then requires the GraphQL graph to expose
+the exact route allowlist and all six destination access stops. Its primary
+evidence scenario is a WALK+BUS round trip from a generic residential test
+point near 松任駅 to 公立松任石川中央病院 on Tuesday 2026-09-08.
+
 MobilityData GTFS Validator 8.0.1 reported zero ERROR notices. The committed
 summary retains all three WARNING groups rather than hiding them. The single
 `stop_too_far_from_shape` notice affects `瀬波` on a reservation-required route
@@ -36,6 +44,11 @@ a static timetable and must not claim live delay or vehicle information.
 The current public demo still uses fixture/mock routing. It is not yet valid
 evidence of real GTFS use; that claim requires the later OTP, API, browser, and
 release gates.
+
+Likewise, a passing local Gate 1 graph does not by itself prove product
+integration or deployment. `ROUTING_PROVIDER=mock` remains unchanged until a
+separate Gate 2 implementation and browser acceptance demonstrate the real
+provider without fallback.
 
 ## Elderly-Mobility Evidence
 

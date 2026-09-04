@@ -31,6 +31,15 @@ destination sources, and a deny-by-default Matsuto/Mikawa route policy. This
 does not mean real routing is live: the application and deployed demo still use
 fixture/mock routing until the later OTP and product-integration gates pass.
 
+Hakusan Gate 1 adds a reproducible local routing evidence path using
+OpenTripPlanner 2.9.0 on Java 25. It deterministically derives 11 fixed routes,
+pins a historical OpenStreetMap snapshot and all input/configuration hashes,
+then checks the exact OTP route inventory, six access stops, and a WALK+BUS
+hospital round trip. The feed is a static timetable and is not realtime.
+Gate 1 is not application integration: `ROUTING_PROVIDER=mock` remains the
+default, and neither the backend nor the deployed demo is switched by these
+commands.
+
 ## Monorepo Structure
 
 ```text
@@ -71,6 +80,7 @@ The app must not:
 ```bash
 make check-docs
 make hakusan-data-test
+make hakusan-otp-test
 make dev
 make test
 make backend-test
@@ -93,6 +103,34 @@ make hakusan-data-evidence \
   HAKUSAN_GTFS_ZIP=/path/to/pinned-feed.zip \
   HAKUSAN_VALIDATOR_REPORT=/path/to/validator/report.json
 ```
+
+The Gate 1 offline contract and transformation suite never downloads data or
+starts Java:
+
+```bash
+make hakusan-otp-test
+```
+
+Artifact acquisition is a separate, explicit network operation. It downloads
+and verifies only the pinned OTP JAR and historical OSM query result; the
+licensed source GTFS remains operator supplied:
+
+```bash
+make hakusan-otp-fetch
+```
+
+After supplying the exact Gate 0 GTFS archive, run the bounded local evidence
+workflow:
+
+```bash
+make hakusan-otp-evidence \
+  HAKUSAN_GTFS_ZIP=/path/to/pinned-feed.zip
+```
+
+The runner uses loopback port 18081, caps the JVM heap at 2 GiB, enforces build
+and startup timeouts, terminates OTP after the queries, and commits no raw feed,
+OSM, JAR, graph, or full log. Those artifacts stay under ignored
+`data/external/`; only a sanitized small evidence summary is eligible for Git.
 
 Implemented backend API:
 

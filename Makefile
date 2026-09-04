@@ -1,7 +1,15 @@
-.PHONY: check-docs dev test hakusan-data-test hakusan-data-evidence backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run deploy-config-test git-deploy
+.PHONY: check-docs dev test hakusan-data-test hakusan-data-evidence hakusan-otp-test hakusan-otp-fetch hakusan-otp-evidence backend-test backend-lint frontend-test frontend-build frontend-lint deploy-cloud-run deploy-config-test git-deploy
 
 HAKUSAN_GTFS_ZIP ?= data/external/hakusan/feed.zip
 HAKUSAN_VALIDATOR_REPORT ?= data/external/hakusan/validator/report.json
+HAKUSAN_OTP_DIR ?= data/external/hakusan/otp
+HAKUSAN_OTP_OSM ?= $(HAKUSAN_OTP_DIR)/hakusan-20260903-canonical.osm
+HAKUSAN_OTP_JAR ?= $(HAKUSAN_OTP_DIR)/otp-shaded-2.9.0.jar
+HAKUSAN_OTP_WORK_DIR ?= $(HAKUSAN_OTP_DIR)/evidence-runs
+HAKUSAN_OTP_SUMMARY ?= data/hakusan/otp-validation-summary.json
+HAKUSAN_OTP_PORT ?= 18081
+HAKUSAN_OTP_STARTUP_TIMEOUT ?= 120
+HAKUSAN_OTP_BUILD_TIMEOUT ?= 600
 
 REQUIRED_DOCS := README.md \
 	docs/product-blueprint.md \
@@ -28,7 +36,7 @@ check-docs:
 dev:
 	docker compose up --build
 
-test: check-docs hakusan-data-test
+test: check-docs hakusan-data-test hakusan-otp-test
 	$(MAKE) backend-test
 	$(MAKE) backend-lint
 	$(MAKE) frontend-test
@@ -44,6 +52,34 @@ hakusan-data-evidence:
 	python3 scripts/validate_hakusan_data.py --require-evidence \
 		--gtfs-zip "$(HAKUSAN_GTFS_ZIP)" \
 		--validator-report "$(HAKUSAN_VALIDATOR_REPORT)"
+
+hakusan-otp-test:
+	python3 -m unittest \
+		scripts/test_prepare_hakusan_osm.py \
+		scripts/test_prepare_hakusan_otp.py \
+		scripts/test_hakusan_otp_contract.py \
+		scripts/test_fetch_hakusan_otp_inputs.py \
+		scripts/test_run_hakusan_otp_evidence.py
+	python3 scripts/validate_hakusan_otp_contract.py
+	bash scripts/test_hakusan_otp_docs.sh
+
+hakusan-otp-fetch:
+	python3 scripts/fetch_hakusan_otp_inputs.py \
+		--repo-root . \
+		--output-dir "$(HAKUSAN_OTP_DIR)" \
+		--artifact all
+
+hakusan-otp-evidence:
+	python3 scripts/run_hakusan_otp_evidence.py \
+		--repo-root . \
+		--gtfs-zip "$(HAKUSAN_GTFS_ZIP)" \
+		--osm "$(HAKUSAN_OTP_OSM)" \
+		--otp-jar "$(HAKUSAN_OTP_JAR)" \
+		--work-dir "$(HAKUSAN_OTP_WORK_DIR)" \
+		--summary-output "$(HAKUSAN_OTP_SUMMARY)" \
+		--port "$(HAKUSAN_OTP_PORT)" \
+		--startup-timeout "$(HAKUSAN_OTP_STARTUP_TIMEOUT)" \
+		--build-timeout "$(HAKUSAN_OTP_BUILD_TIMEOUT)"
 
 backend-test:
 	cd backend && uv run pytest
