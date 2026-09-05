@@ -144,6 +144,41 @@ Implemented backend API:
 - `GET /rehearsals/{id}`
 - `GET /data-quality`
 
+### Hakusan Gate 2 local backend
+
+The optional backend adapter supports OTP 2.9.0 `planConnection`. Configure
+`ROUTING_PROVIDER=otp`, `OTP_GRAPHQL_URL=http://127.0.0.1:18081/otp/gtfs/v1`,
+and `OTP_ROUTE_RULES_PATH` pointing to `data/hakusan/route-rules.json` (the
+repository file is the local default). Missing OTP configuration returns an
+unavailable result. The default demo remains `mock`.
+
+For real routing, POST `/diagnosis/run` with `mock_transport_results: {}` and
+explicit timezone-aware `outbound_departure` and `return_departure`, for example
+`2026-09-08T06:50:00+09:00` and `2026-09-08T11:00:00+09:00`. A missing date
+produces `unknown`; a timezone-free or reversed date pair is rejected. Return
+queries travel from the destination back home. Existing fixture requests are
+still supported. The current frontend fixture flow does not yet collect these
+dates or select Hakusan destinations.
+
+With the Gate 1 graph served locally on port 18081, reproduce the six-category
+backend/API check with:
+
+```bash
+backend/.venv/bin/python scripts/run_hakusan_gate2_evidence.py \
+  --graph /path/to/verified/graph.obj
+```
+
+This checks the graph file against Gate 1 evidence and the server route/stop
+inventory, then calls the actual adapter and the in-process FastAPI endpoint.
+Start OTP using that same graph directory; a file hash alone cannot attest an
+unrelated running server. Results are in
+`data/hakusan/gate2-validation-summary.json`. Pure walking is valid where
+appropriate; candidates are ranked by profile-limit excess, then arrival time.
+At most three OTP alternatives are evaluated. `accessibility_verified=false`
+means stairs and building entrances require checking; route success does not
+establish accessibility. The timetable is static and opening hours are not
+evaluated.
+
 ## Documentation
 
 - [Product blueprint](docs/product-blueprint.md)

@@ -134,6 +134,21 @@ Gate 2 and release acceptance decisions.
 
 ## Frontend
 
+Gate 2 backend integration uses the live OTP 2.9.0 schema (`planConnection`,
+`numberOfTransfers`, and leg `start/end.scheduledTime`). The adapter validates
+all returned alternatives against the fixed-route allowlist and exposes no
+internal route IDs. A valid walking-only route with
+`WALKING_BETTER_THAN_TRANSIT` is accepted; other routing/GraphQL errors fail
+closed. Explicit request datetimes replace the former fixed July date, and
+return coordinates are reversed. The acquisition and graph policy from Gate 1
+remain prerequisites.
+
+The six-category API evidence is reproducible using
+`scripts/run_hakusan_gate2_evidence.py` with the backend virtual environment.
+It verifies provider selection, all twelve directional plans, and missing-date
+unknown results. `accessibility_verified` is false for OTP plans and contributes
+a warning and caution to diagnosis when stair avoidance is requested.
+
 Implemented routes:
 
 - `/`

@@ -1,4 +1,6 @@
 from functools import lru_cache
+from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -6,7 +8,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_name: str = "車なし生活リハーサル"
-    routing_provider: str = Field(default="mock", alias="ROUTING_PROVIDER")
+    routing_provider: Literal["mock", "otp"] = Field(default="mock", alias="ROUTING_PROVIDER")
+    otp_route_rules_path: str = Field(
+        default=str(Path(__file__).resolve().parents[3] / "data/hakusan/route-rules.json"),
+        alias="OTP_ROUTE_RULES_PATH",
+    )
     cors_origins: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",
         alias="CORS_ORIGINS",

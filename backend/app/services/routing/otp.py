@@ -1,4 +1,5 @@
-from math import ceil
+from datetime import datetime
+from math import ceil, isfinite
 from typing import Any
 
 import httpx
@@ -7,9 +8,15 @@ from app.domain.models import Destination, HomeLocation, MobilityProfile, TripLe
 
 
 class OTPRoutingProvider:
-    def __init__(self, graphql_url: str, client: httpx.Client | None = None) -> None:
+    def __init__(
+        self,
+        graphql_url: str,
+        client: httpx.Client | None = None,
+        allowed_route_ids: frozenset[str] = frozenset(),
+    ) -> None:
         self.graphql_url = graphql_url
-        self.client = client or httpx.Client(timeout=10)
+        self.client = client
+        self.allowed_route_ids = allowed_route_ids
 
     def plan_trip(
         self,
@@ -20,92 +27,135 @@ class OTPRoutingProvider:
         profile: MobilityProfile,
         direction: str,
     ) -> TripPlanResult:
-        missing_coordinates = (
-            origin.lat is None
-            or origin.lon is None
-            or destination.lat is None
-            or destination.lon is None
-        )
-        if missing_coordinates:
+        if any(v is None for v in (origin.lat, origin.lon, destination.lat, destination.lon)):
             return _unavailable("位置情報が不足しているため判定不能です。")
-
-        variables = {
-            "from": {"lat": origin.lat, "lon": origin.lon},
-            "to": {"lat": destination.lat, "lon": destination.lon},
-            "dateTime": departure_time,
-            "walkReluctance": 2.0 if profile.avoid_stairs else 1.0,
-            "direction": direction,
-        }
+        if not self.graphql_url or not self.allowed_route_ids:
+            return _unavailable("経路サービスの設定が不足しているため判定不能です。")
         try:
-            response = self.client.post(
-                self.graphql_url,
-                json={"query": _PLAN_QUERY, "variables": variables},
-            )
+            _date(departure_time)
+            if direction not in {"outbound", "return"}:
+                raise ValueError("invalid direction")
+            start = _location(origin.name, origin.lat, origin.lon)
+            end = _location(destination.name, destination.lat, destination.lon)
+            if direction == "return":
+                start, end = end, start
+            variables = {
+                "origin": start,
+                "destination": end,
+                "dateTime": {"earliestDeparture": departure_time},
+            }
+            if self.client is not None:
+                response = self.client.post(
+                    self.graphql_url,
+                    json={"query": _PLAN_QUERY, "variables": variables},
+                )
+            else:
+                with httpx.Client(timeout=20) as client:
+                    response = client.post(
+                        self.graphql_url,
+                        json={"query": _PLAN_QUERY, "variables": variables},
+                    )
             response.raise_for_status()
             payload = response.json()
-        except Exception:
-            return _unavailable("OTPから経路を取得できないため判定不能です。")
+            if payload.get("errors"):
+                raise ValueError("GraphQL errors")
+            connection = payload["data"]["planConnection"]
+            routing_errors = connection.get("routingErrors") or []
+            if any(e["code"] != "WALKING_BETTER_THAN_TRANSIT" for e in routing_errors):
+                raise ValueError("routing errors")
+            edges = connection["edges"]
+            if not edges:
+                raise ValueError("no itinerary")
+            plans = [_parse_itinerary(e["node"], self.allowed_route_ids) for e in edges]
+            if routing_errors and any(leg.mode != "WALK" for plan in plans for leg in plan.legs):
+                raise ValueError("unexpected transit with walking-only notice")
+            plan = min(
+                plans,
+                key=lambda p: (
+                    max(0, p.walk_minutes - profile.walk_minutes)
+                    + max(0, p.wait_minutes - profile.max_wait_minutes)
+                    + 15 * max(0, p.transfers - profile.max_transfers),
+                    _date(p.legs[-1].end_time),
+                ),
+            )
+            plan.option_count = len(plans)
+            if profile.avoid_stairs:
+                plan.summary_ja += " 階段の有無や建物入口の通行条件は未確認です。"
+            return plan
+        except (httpx.HTTPError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            return _unavailable("信頼できる経路データを取得できないため判定不能です。")
 
-        itineraries = (
-            payload.get("data", {}).get("plan", {}).get("itineraries", [])
-            if isinstance(payload, dict)
-            else []
-        )
-        if not itineraries:
-            return _unavailable("利用できる経路が見つからないため判定不能です。")
 
-        itinerary = itineraries[0]
-        return _parse_itinerary(itinerary)
+def _location(name: str, lat: float | None, lon: float | None) -> dict[str, Any]:
+    return {"label": name, "location": {"coordinate": {"latitude": lat, "longitude": lon}}}
 
 
-def _parse_itinerary(itinerary: dict[str, Any]) -> TripPlanResult:
-    legs: list[TripLeg] = []
-    route_names: list[str] = []
-    for leg in itinerary.get("legs", []):
-        route_name = None
-        route = leg.get("route")
-        if isinstance(route, dict):
-            route_name = route.get("shortName") or route.get("longName")
-        if route_name:
-            route_names.append(route_name)
-        duration_seconds = int(leg.get("duration") or 0)
+def _date(value: str) -> datetime:
+    result = datetime.fromisoformat(value)
+    if result.utcoffset() is None:
+        raise ValueError("timezone required")
+    return result
+
+
+def _number(value: Any) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("numeric value required")
+    if not isfinite(value) or value < 0:
+        raise ValueError("invalid value")
+    return float(value)
+
+
+def _parse_itinerary(itinerary: dict[str, Any], allowed: frozenset[str]) -> TripPlanResult:
+    legs = []
+    names = []
+    for leg in itinerary["legs"]:
+        mode = leg["mode"]
+        if mode not in {"WALK", "BUS"}:
+            raise ValueError("unsupported mode")
+        name = None
+        if mode == "BUS":
+            route = leg["route"]
+            if route["gtfsId"].split(":", 1)[-1] not in allowed:
+                raise ValueError("route outside pilot")
+            name = route.get("shortName") or route.get("longName") or "路線バス"
+            names.append(name)
+        start, end = leg["start"]["scheduledTime"], leg["end"]["scheduledTime"]
+        if _date(end) < _date(start):
+            raise ValueError("reversed times")
+        minutes = ceil(_number(leg["duration"]) / 60)
         legs.append(
             TripLeg(
-                mode=str(leg.get("mode") or "UNKNOWN"),
-                start_time=str(leg.get("startTime") or ""),
-                end_time=str(leg.get("endTime") or ""),
-                duration_minutes=ceil(duration_seconds / 60),
-                walk_minutes=ceil(duration_seconds / 60) if leg.get("mode") == "WALK" else 0,
+                mode=mode,
+                start_time=start,
+                end_time=end,
+                duration_minutes=minutes,
+                walk_minutes=minutes if mode == "WALK" else 0,
+                route_name=name,
+                from_name=leg["from"]["name"] or "出発地",
+                to_name=leg["to"]["name"] or "目的地",
                 wait_minutes=0,
                 transfers=0,
-                route_name=route_name,
-                from_name=str((leg.get("from") or {}).get("name") or ""),
-                to_name=str((leg.get("to") or {}).get("name") or ""),
             )
         )
-
-    route_name = " / ".join(dict.fromkeys(route_names)) if route_names else None
-    duration_minutes = ceil(int(itinerary.get("duration") or 0) / 60)
-    walk_minutes = ceil(int(itinerary.get("walkTime") or 0) / 60)
-    wait_minutes = ceil(int(itinerary.get("waitingTime") or 0) / 60)
-    transfers = int(itinerary.get("transfers") or 0)
-    summary = (
-        f"{route_name}を使う経路です。徒歩{walk_minutes}分、待ち時間{wait_minutes}分です。"
-        if route_name
-        else f"公共交通の経路です。徒歩{walk_minutes}分、待ち時間{wait_minutes}分です。"
-    )
-
+    if not legs:
+        raise ValueError("empty legs")
+    walk = ceil(_number(itinerary["walkTime"]) / 60)
+    wait = ceil(_number(itinerary["waitingTime"]) / 60)
+    transfers = _number(itinerary["numberOfTransfers"])
+    if not transfers.is_integer():
+        raise ValueError("invalid transfers")
+    route_name = " / ".join(dict.fromkeys(names)) or None
     return TripPlanResult(
         provider="otp",
         available=True,
-        duration_minutes=duration_minutes,
-        walk_minutes=walk_minutes,
-        wait_minutes=wait_minutes,
-        transfers=transfers,
+        duration_minutes=ceil(_number(itinerary["duration"]) / 60),
+        walk_minutes=walk,
+        wait_minutes=wait,
+        transfers=int(transfers),
         route_name=route_name,
-        summary_ja=summary,
-        option_count=1,
+        summary_ja=f"徒歩{walk}分、待ち時間{wait}分の経路です。",
         legs=legs,
+        accessibility_verified=False,
     )
 
 
@@ -117,38 +167,28 @@ def _unavailable(summary_ja: str) -> TripPlanResult:
         walk_minutes=0,
         wait_minutes=0,
         transfers=0,
-        route_name=None,
         summary_ja=summary_ja,
         option_count=0,
-        legs=[],
+        accessibility_verified=False,
     )
 
 
 _PLAN_QUERY = """
-query Plan($from: InputCoordinates!, $to: InputCoordinates!, $dateTime: DateTime!) {
-  plan(from: $from, to: $to, dateTime: $dateTime) {
-    itineraries {
-      duration
-      walkTime
-      waitingTime
-      transfers
+query Plan($origin: PlanLabeledLocationInput!, $destination: PlanLabeledLocationInput!,
+           $dateTime: PlanDateTimeInput!) {
+  planConnection(origin: $origin, destination: $destination, dateTime: $dateTime,
+    first: 3, searchWindow: "PT2H",
+    modes: {direct: [WALK], transit: {access: [WALK], egress: [WALK],
+      transfer: [WALK], transit: [{mode: BUS}]}}) {
+    routingErrors { code }
+    edges { node {
+      duration walkTime waitingTime numberOfTransfers
       legs {
-        mode
-        startTime
-        endTime
-        duration
-        route {
-          shortName
-          longName
-        }
-        from {
-          name
-        }
-        to {
-          name
-        }
+        mode duration start { scheduledTime } end { scheduledTime }
+        route { gtfsId shortName longName }
+        from { name } to { name }
       }
-    }
+    } }
   }
 }
 """

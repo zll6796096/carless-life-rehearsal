@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.domain.models import (
     DataQualityWarning,
     Destination,
@@ -10,6 +12,7 @@ from app.domain.models import (
     MobilityProfile,
     RoundTripPlan,
 )
+from app.services.routing.otp import _unavailable
 from app.services.routing.provider import get_routing_provider
 
 DEFAULT_CATEGORY_WEIGHTS: dict[DestinationCategory, float] = {
@@ -38,6 +41,8 @@ def calculate_life_score(status_by_category: dict[DestinationCategory, Feasibili
 
 
 def run_life_diagnosis(request: DiagnosisRequest) -> LifeDiagnosis:
+    if not isinstance(request, DiagnosisRequest):
+        request = DiagnosisRequest.model_validate(request.model_dump())
     profile = request.selected_mobility_profile
     warnings: list[DataQualityWarning] = []
     item_results: list[FeasibilityResult] = []
@@ -59,20 +64,32 @@ def run_life_diagnosis(request: DiagnosisRequest) -> LifeDiagnosis:
         round_trip = request.mock_transport_results.get(destination.id)
         if round_trip is None:
             provider = get_routing_provider(mock_results=request.mock_transport_results)
-            outbound = provider.plan_trip(
-                origin=request.home_location,
-                destination=destination,
-                departure_time="2026-07-06T09:00:00+09:00",
-                profile=profile,
-                direction="outbound",
+            outbound = (
+                provider.plan_trip(
+                    origin=request.home_location,
+                    destination=destination,
+                    departure_time=request.outbound_departure.isoformat(),
+                    profile=profile,
+                    direction="outbound",
+                )
+                if request.outbound_departure
+                else _unavailable("出発日時が未指定のため判定不能です。")
             )
-            return_plan = provider.plan_trip(
-                origin=request.home_location,
-                destination=destination,
-                departure_time="2026-07-06T12:00:00+09:00",
-                profile=profile,
-                direction="return",
+            return_plan = (
+                provider.plan_trip(
+                    origin=request.home_location,
+                    destination=destination,
+                    departure_time=request.return_departure.isoformat(),
+                    profile=profile,
+                    direction="return",
+                )
+                if request.return_departure
+                else _unavailable("帰宅日時が未指定のため判定不能です。")
             )
+            if outbound.provider == "otp" and outbound.available and outbound.legs:
+                arrival = datetime.fromisoformat(outbound.legs[-1].end_time)
+                if request.return_departure and arrival > request.return_departure:
+                    return_plan = _unavailable("到着前に帰りの出発時刻になるため判定不能です。")
             round_trip = RoundTripPlan(outbound=outbound, return_plan=return_plan)
         result = _evaluate_destination(
             destination=destination,
@@ -155,6 +172,7 @@ def _evaluate_destination(
             warnings=[warning],
         )
     reasons: list[str] = []
+    warnings: list[DataQualityWarning] = []
     status = FeasibilityStatus.OK
 
     if return_plan is None:
@@ -169,6 +187,17 @@ def _evaluate_destination(
         )
 
     for label, plan in (("行き", outbound), ("帰り", return_plan)):
+        if profile.avoid_stairs and not plan.accessibility_verified:
+            reasons.append(f"{label}の階段や建物入口の通行条件は未確認です。")
+            # Do not let a successful route imply high confidence in accessibility.
+            if not any(w.code == "accessibility_unverified" for w in warnings):
+                warnings.append(
+                    DataQualityWarning(
+                        code="accessibility_unverified",
+                        message_ja="階段や建物入口の通行条件は未確認です。",
+                        destination_id=destination.id,
+                    )
+                )
         if plan.walk_minutes > profile.walk_minutes:
             reasons.append(
                 f"{label}の徒歩時間が{plan.walk_minutes}分で、希望の{profile.walk_minutes}分を超えます。"
@@ -204,6 +233,7 @@ def _evaluate_destination(
         category=destination.category,
         status=status,
         reasons_ja=reasons or ["希望条件の範囲で、行き帰りの移動を確認できます。"],
+        warnings=warnings,
         outbound_summary_ja=outbound.summary_ja,
         return_summary_ja=return_plan.summary_ja,
     )

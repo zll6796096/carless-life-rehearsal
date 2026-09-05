@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 
 class DestinationCategory(StrEnum):
@@ -86,6 +86,7 @@ class TripPlanResult(BaseModel):
     summary_ja: str
     option_count: int = Field(default=1, ge=0)
     has_stairs: bool = False
+    accessibility_verified: bool = True
     legs: list[TripLeg] = Field(default_factory=list)
 
 
@@ -153,6 +154,15 @@ class DiagnosisRequest(BaseModel):
     mobility_profile: MobilityProfile | None = None
     time_windows: list[TimeWindow] = Field(default_factory=list)
     mock_transport_results: dict[str, RoundTripPlan] = Field(default_factory=dict)
+    outbound_departure: AwareDatetime | None = None
+    return_departure: AwareDatetime | None = None
+
+    @model_validator(mode="after")
+    def validate_departures(self) -> "DiagnosisRequest":
+        if self.outbound_departure and self.return_departure:
+            if self.return_departure <= self.outbound_departure:
+                raise ValueError("return_departure must be after outbound_departure")
+        return self
 
     @property
     def selected_mobility_profile(self) -> MobilityProfile:

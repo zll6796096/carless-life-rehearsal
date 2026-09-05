@@ -1,0 +1,190 @@
+{
+  "available_journeys": 12,
+  "diagnosis_data_confidence": 0.49,
+  "diagnosis_statuses": {
+    "city_hall": "caution",
+    "hospital": "caution",
+    "pharmacy": "caution",
+    "social": "caution",
+    "station": "caution",
+    "supermarket": "support_needed"
+  },
+  "expected_journeys": 12,
+  "graph_sha256": "c898d7a2fa96cf3d944783f2b7f525830260533012da44d0e7038e74f952014d",
+  "limitations": [
+    "Destination coordinates are stop/POI proxies, not verified entrances",
+    "Stair-free accessibility remains unverified"
+  ],
+  "missing_dates_unknown": true,
+  "origin": {
+    "address": "公開テスト地点",
+    "lat": 36.52725,
+    "lon": 136.5605,
+    "name": "松任駅西側の住宅地テスト地点"
+  },
+  "outbound_departure": "2026-09-08T06:50:00+09:00",
+  "profile": {
+    "avoid_stairs": true,
+    "max_transfers": 1,
+    "max_wait_minutes": 30,
+    "walk_minutes": 15
+  },
+  "realtime": false,
+  "results": [
+    {
+      "category": "supermarket",
+      "destination_id": "supermarket-osakaya-matto",
+      "outbound": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 25,
+        "modes": [
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 25
+      },
+      "return": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 17,
+        "modes": [
+          "BUS",
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      }
+    },
+    {
+      "category": "hospital",
+      "destination_id": "hospital-matto-ishikawa-chuo",
+      "outbound": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 21,
+        "modes": [
+          "WALK",
+          "BUS"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      },
+      "return": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 25,
+        "modes": [
+          "BUS",
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      }
+    },
+    {
+      "category": "pharmacy",
+      "destination_id": "pharmacy-kusuri-aoki-nunoichi",
+      "outbound": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 20,
+        "modes": [
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 20
+      },
+      "return": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 20,
+        "modes": [
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 20
+      }
+    },
+    {
+      "category": "city_hall",
+      "destination_id": "city-hall-hakusan",
+      "outbound": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 26,
+        "modes": [
+          "WALK",
+          "BUS"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      },
+      "return": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 23,
+        "modes": [
+          "BUS",
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      }
+    },
+    {
+      "category": "station",
+      "destination_id": "station-matto",
+      "outbound": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 13,
+        "modes": [
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      },
+      "return": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 13,
+        "modes": [
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      }
+    },
+    {
+      "category": "social",
+      "destination_id": "social-fukushi-fureai",
+      "outbound": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 27,
+        "modes": [
+          "WALK",
+          "BUS",
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 17
+      },
+      "return": {
+        "accessibility_verified": false,
+        "available": true,
+        "duration_minutes": 19,
+        "modes": [
+          "BUS",
+          "WALK"
+        ],
+        "provider": "otp",
+        "walk_minutes": 13
+      }
+    }
+  ],
+  "return_departure": "2026-09-08T11:00:00+09:00",
+  "schema_version": 1,
+  "status": "PASS"
+}
