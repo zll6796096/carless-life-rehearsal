@@ -1,6 +1,6 @@
 # Apple-style web preview: home and diagnosis
 
-Date: 2026-09-05. Baseline: c4f3256. Status: visual preview for user review, not production implementation.
+Date: 2026-09-05. Baseline: c4f3256. Status: visual design accepted by the user (「符合预期」); implementation planning, not production implementation.
 
 ## Objective and approved direction
 
