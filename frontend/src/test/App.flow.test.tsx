@@ -179,7 +179,8 @@ describe("main frontend flow", () => {
     );
 
     expect(screen.getByRole("heading", { name: "車なし生活リハーサル" })).toBeInTheDocument();
-    expect(screen.getByText("免許を返す前に、車なしの毎日を少しだけ試してみましょう。")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /車がなくても、\s*いつもの暮らしを。/ })).toBeInTheDocument();
+    expect(screen.getByText(/免許を返す前に。お買い物や通院の往復を、/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "車なし生活を確認する" })).toHaveAttribute(
       "href",
       "/onboarding"
@@ -310,6 +311,7 @@ describe("main frontend flow", () => {
     expect(screen.getByRole("heading", { name: "自分で行けそう" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "注意して行く" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "家族や支援者と確認" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "みどりスーパーの往復と理由" }));
     expect(
       screen.getByRole("button", { name: "みどりスーパーの理由を聞く" })
     ).toBeInTheDocument();
