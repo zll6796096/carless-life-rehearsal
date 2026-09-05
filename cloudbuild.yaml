@@ -1,4 +1,16 @@
 steps:
+  - id: prepare-otp-artifacts
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        mkdir -p /workspace/otp-build
+        gcloud storage cp gs://zhang23-23-carless-hakusan-artifacts/c898d7a2/graph.obj /workspace/otp-build/graph.obj
+        gcloud storage cp gs://zhang23-23-carless-hakusan-artifacts/11282412/otp.jar /workspace/otp-build/otp.jar
+        echo 'c898d7a2fa96cf3d944783f2b7f525830260533012da44d0e7038e74f952014d  /workspace/otp-build/graph.obj' | sha256sum -c -
+        echo '112824122cd1a89e2dff6b5b3088ffbd4f04c3c0a400ca9f08f17b762f5325f6  /workspace/otp-build/otp.jar' | sha256sum -c -
+        cp config/otp/hakusan/router-config.json /workspace/otp-build/router-config.json
   - id: backend-test
     name: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
     entrypoint: bash
@@ -9,6 +21,11 @@ steps:
         cd backend
         uv run pytest
         uv run ruff check .
+
+  - id: cloud-contract-test
+    name: python:3.12-slim
+    entrypoint: bash
+    args: ['-ceu', 'python3 -m unittest scripts/test_cloud_hakusan.py && bash scripts/test_cloudbuild_config.sh']
 
   - id: frontend-test
     name: node:22
@@ -28,15 +45,35 @@ steps:
       - build
       - --label=org.opencontainers.image.revision=${COMMIT_SHA}
       - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_API_SERVICE}:${COMMIT_SHA}
-      - backend
+      - --file=backend/Dockerfile
+      - .
 
   - id: build-web
     name: gcr.io/cloud-builders/docker
     args:
       - build
+      - --build-arg=VITE_DATA_PROFILE=hakusan
       - --label=org.opencontainers.image.revision=${COMMIT_SHA}
       - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_WEB_SERVICE}:${COMMIT_SHA}
       - frontend
+
+  - id: build-push-otp
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        docker build -f config/otp/cloud/Dockerfile --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/apps/carless-hakusan-otp-c898d7a2:${COMMIT_SHA} /workspace/otp-build
+        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/apps/carless-hakusan-otp-c898d7a2:${COMMIT_SHA}
+
+  - id: deploy-private-otp
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args: ['scripts/deploy-hakusan-otp.sh']
+    env:
+      - PROJECT_ID=$PROJECT_ID
+      - DEPLOY_REGION=${_REGION}
+      - COMMIT_SHA=$COMMIT_SHA
 
   - id: push-api
     name: gcr.io/cloud-builders/docker

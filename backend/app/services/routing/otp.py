@@ -13,10 +13,29 @@ class OTPRoutingProvider:
         graphql_url: str,
         client: httpx.Client | None = None,
         allowed_route_ids: frozenset[str] = frozenset(),
+        identity_audience: str | None = None,
     ) -> None:
         self.graphql_url = graphql_url
         self.client = client
         self.allowed_route_ids = allowed_route_ids
+        self.identity_audience = identity_audience
+
+    def _headers(self, client: httpx.Client) -> dict[str, str]:
+        if not self.identity_audience:
+            return {}
+        audience = self.identity_audience.rstrip("/")
+        if not audience.startswith("https://") or not self.graphql_url.startswith(audience + "/"):
+            raise ValueError("OTP identity audience must match the configured service")
+        token = client.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity",
+            params={"audience": audience},
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        token.raise_for_status()
+        if not token.text.strip():
+            raise ValueError("Empty identity token")
+        return {"Authorization": f"Bearer {token.text.strip()}"}
 
     def plan_trip(
         self,
@@ -47,12 +66,14 @@ class OTPRoutingProvider:
             if self.client is not None:
                 response = self.client.post(
                     self.graphql_url,
+                    headers=self._headers(self.client),
                     json={"query": _PLAN_QUERY, "variables": variables},
                 )
             else:
-                with httpx.Client(timeout=20) as client:
+                with httpx.Client(timeout=60) as client:
                     response = client.post(
                         self.graphql_url,
+                        headers=self._headers(client),
                         json={"query": _PLAN_QUERY, "variables": variables},
                     )
             response.raise_for_status()

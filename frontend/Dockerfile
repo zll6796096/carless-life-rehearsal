@@ -7,6 +7,8 @@ COPY package.json package-lock.json /app/
 RUN npm ci
 
 COPY . /app
+ARG VITE_DATA_PROFILE=demo
+ENV VITE_DATA_PROFILE=${VITE_DATA_PROFILE}
 RUN npm run build
 
 # Stage 2: Production web server

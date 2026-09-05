@@ -190,7 +190,7 @@ evaluated.
 - [Japanese submission summary](docs/submission-summary-ja.md)
 - [Technical notes](docs/technical-notes.md)
 
-## Cloud Run Deployment (DEMO_ONLY)
+## Cloud Run Deployment (Hakusan pilot)
 
 Production deployment is owned exclusively by the `main` branch Cloud Build
 Trigger. The local `make deploy-cloud-run` target is an intentional fail-closed
@@ -203,6 +203,8 @@ guard and cannot build or mutate Cloud Run.
 - **Backend Service**: `carless-life-api` (FastAPI, 1 CPU, 512 MiB, concurrency 20, min 0, max 1)
 - **Frontend Service**: `carless-life-web` (Nginx SPA, 1 CPU, 512 MiB, min 0, max 1)
 - **Artifact Registry**: `apps`
+- **Private OTP**: `carless-hakusan-otp-c898d7a2` (2 CPU, 4 GiB, concurrency 8, min 0, max 1). The API obtains an audience-bound identity token from Cloud Run metadata; no service-account key is stored.
+- **Pinned artifacts**: private regional bucket `zhang23-23-carless-hakusan-artifacts`; graph and OTP JAR hashes are checked before building the OTP image.
 
 ## Production delivery
 
@@ -247,7 +249,9 @@ commands for explicit operator review; it does not execute a rollback.
 
 ### Operational Limitations & Guidelines
 
-- **DEMO_ONLY**: This deployment uses deterministic fixture/mock routing data for demonstration purposes only.
+- **Hakusan pilot**: Web builds explicitly select `VITE_DATA_PROFILE=hakusan`; the API uses private OTP and the validated Hakusan graph. Every release phase checks six real destinations and dated rehearsals. Demo fixtures remain compatibility tests, not real-routing evidence.
+- **Bounded evidence**: Fixed public test origin, static timetable valid through 2027-03-15; no verified entrances, accessibility, or live disruptions. Release smoke uses the pinned 2026-09-08 scenario. Rehearsal feedback is session-only.
+- **Cold starts and costs**: OTP scales to zero and is capped at one instance; initial requests may be slower. Compute, image storage, and artifact storage can incur charges.
 - **Stateless**: No database or persistent storage is attached; memory data resets on instance restart.
 - **Rollback**: Use only the exact validated API/Web pair from one successful
   release log; never select a revision by recency.

@@ -1,18 +1,19 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /app/backend
 
 # Install uv package manager
 RUN pip install --no-cache-dir uv
 
 # Copy dependency definitions
-COPY pyproject.toml uv.lock /app/
+COPY backend/pyproject.toml backend/uv.lock ./
 
 # Install production dependencies only
 RUN uv sync --frozen --no-dev
 
 # Copy application code
-COPY . /app
+COPY backend/app ./app
+COPY data/hakusan /app/data/hakusan
 
 # Default Cloud Run port
 ENV PORT=8080

@@ -21,5 +21,9 @@ def get_routing_provider(
                 allowed = frozenset(row["route_id"] for row in policy["allowed_routes"])
         except (OSError, ValueError, KeyError, TypeError):
             pass
-        return OTPRoutingProvider(active_settings.otp_graphql_url or "", allowed_route_ids=allowed)
+        return OTPRoutingProvider(
+            active_settings.otp_graphql_url or "",
+            allowed_route_ids=allowed,
+            identity_audience=active_settings.otp_identity_audience,
+        )
     return MockRoutingProvider(mock_results)

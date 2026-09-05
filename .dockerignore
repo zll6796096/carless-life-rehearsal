@@ -1,0 +1,12 @@
+**
+!backend
+!backend/app
+!backend/app/**
+!backend/pyproject.toml
+!backend/uv.lock
+!backend/Dockerfile
+!data
+!data/hakusan
+!data/hakusan/**
+**/__pycache__
+**/*.pyc

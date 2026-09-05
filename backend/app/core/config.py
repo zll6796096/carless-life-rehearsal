@@ -18,6 +18,7 @@ class Settings(BaseSettings):
         alias="CORS_ORIGINS",
     )
     otp_graphql_url: str | None = Field(default=None, alias="OTP_GRAPHQL_URL")
+    otp_identity_audience: str | None = Field(default=None, alias="OTP_IDENTITY_AUDIENCE")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 

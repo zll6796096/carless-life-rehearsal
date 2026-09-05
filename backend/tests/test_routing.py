@@ -140,6 +140,44 @@ def test_naive_date_does_not_make_request():
     assert not result.available
 
 
+def test_private_cloud_run_uses_metadata_identity_token():
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        if request.url.host == "metadata.google.internal":
+            assert request.headers["Metadata-Flavor"] == "Google"
+            assert request.url.params["audience"] == "https://otp.test"
+            return httpx.Response(200, text="test-identity-token")
+        assert request.headers["Authorization"] == "Bearer test-identity-token"
+        return httpx.Response(200, json=payload())
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        provider = OTPRoutingProvider(
+            "https://otp.test/graphql",
+            client,
+            frozenset({"allowed"}),
+            identity_audience="https://otp.test",
+        )
+        assert plan(provider).available
+    assert len(calls) == 2
+
+
+def test_identity_token_is_not_sent_to_a_different_origin():
+    with httpx.Client(
+        transport=httpx.MockTransport(
+            lambda _: (_ for _ in ()).throw(AssertionError("must not fetch or send token"))
+        )
+    ) as client:
+        provider = OTPRoutingProvider(
+            "https://other.test/graphql",
+            client,
+            frozenset({"allowed"}),
+            identity_audience="https://otp.test",
+        )
+        assert not plan(provider).available
+
+
 def test_choose_profile_compatible_bus_instead_of_first_long_walk():
     data = payload()
     bus = data["data"]["planConnection"]["edges"][0]

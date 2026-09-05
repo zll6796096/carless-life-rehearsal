@@ -16,6 +16,8 @@ candidate_tag="candidate-${SHORT_SHA}-${build_token}"
 production_tag="production-${SHORT_SHA}-${build_token}"
 api_image="$(tr -d '\n' < "${release_workspace}/carless-api-image.txt")"
 web_image="$(tr -d '\n' < "${release_workspace}/carless-web-image.txt")"
+export OTP_SERVICE_URL="$(tr -d '\n' < "${release_workspace}/carless-otp-url.txt")"
+[[ "${OTP_SERVICE_URL}" =~ ^https://carless-hakusan-otp-c898d7a2-[a-z0-9-]+(\.a)?\.run\.app$ ]]
 api_initial="${release_workspace}/carless-api-initial.json"
 web_initial="${release_workspace}/carless-web-initial.json"
 api_locked="${release_workspace}/carless-api-locked.json"
@@ -486,6 +488,7 @@ prepare_candidate_payload() {
     "${web_initial}" <<'PY'
 import copy
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -566,8 +569,10 @@ stable_web_origins = (
 if product_component == "api":
     env["ROUTING_PROVIDER"] = {
         "name": "ROUTING_PROVIDER",
-        "value": "mock",
+        "value": "otp",
     }
+    env["OTP_GRAPHQL_URL"] = {"name": "OTP_GRAPHQL_URL", "value": os.environ["OTP_SERVICE_URL"] + "/otp/gtfs/v1"}
+    env["OTP_IDENTITY_AUDIENCE"] = {"name": "OTP_IDENTITY_AUDIENCE", "value": os.environ["OTP_SERVICE_URL"]}
     env["CORS_ORIGINS"] = {
         "name": "CORS_ORIGINS",
         "value": ",".join(stable_web_origins),
@@ -848,6 +853,7 @@ verify_candidate_revision() {
     "${web_candidate_url}" \
     "${web_initial}" <<'PY'
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -915,8 +921,12 @@ env = {
     for item in candidate_containers[0].get("env", [])
 }
 if component == "api":
-    if env.get("ROUTING_PROVIDER") != "mock":
+    if env.get("ROUTING_PROVIDER") != "otp":
         raise SystemExit("API candidate routing provider changed")
+    if env.get("OTP_GRAPHQL_URL") != os.environ["OTP_SERVICE_URL"] + "/otp/gtfs/v1":
+        raise SystemExit("OTP endpoint mismatch")
+    if env.get("OTP_IDENTITY_AUDIENCE") != os.environ["OTP_SERVICE_URL"]:
+        raise SystemExit("OTP identity audience mismatch")
     origins = set((env.get("CORS_ORIGINS") or "").split(","))
     expected_origins = set(
         candidate_cors_origins(
@@ -942,6 +952,7 @@ PY
 }
 
 verify_candidate_endpoints() {
+  python3 scripts/smoke_hakusan_release.py "${api_candidate_url}"
   curl --fail --silent --show-error \
     --retry 8 --retry-all-errors --retry-delay 5 \
     --header "Origin: ${web_candidate_url}" \
@@ -1052,6 +1063,7 @@ PY
 }
 
 verify_production_candidate_endpoints() {
+  python3 scripts/smoke_hakusan_release.py "${api_production_candidate_url}"
   local stable_api_url=\
 "https://carless-life-api-788259830737.asia-northeast1.run.app"
   local stable_web_origin=\
@@ -1676,6 +1688,7 @@ on_exit() {
 verify_production_endpoints() {
   local api_url="$1"
   local web_url="$2"
+  python3 scripts/smoke_hakusan_release.py "${api_url}"
   curl --fail --silent --show-error \
     --retry 3 --retry-all-errors --retry-delay 5 \
     --output "${release_workspace}/carless-production-health.json" \
