@@ -5,7 +5,14 @@ set -euo pipefail
 : "${COMMIT_SHA:?}"
 service=carless-hakusan-otp-c898d7a2
 repository="${DEPLOY_REGION}-docker.pkg.dev/${PROJECT_ID}/apps/${service}"
-digest="$(gcloud artifacts docker images describe "${repository}:${COMMIT_SHA}" --project="${PROJECT_ID}" --format='value(image_summary.digest)')"
+digest="$(python3 -c '
+import re
+from pathlib import Path
+matches = re.findall(r"digest:\s+(sha256:[0-9a-f]{64})\s+size:", Path("/workspace/carless-otp-push.log").read_text())
+if len(matches) != 1:
+    raise SystemExit("Expected exactly one pushed OTP digest")
+print(matches[0])
+')"
 [[ "${digest}" =~ ^sha256:[a-f0-9]{64}$ ]]
 gcloud run services update "${service}" --project="${PROJECT_ID}" --region="${DEPLOY_REGION}" \
   --image="${repository}@${digest}" --async --quiet

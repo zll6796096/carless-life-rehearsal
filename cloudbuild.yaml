@@ -64,7 +64,8 @@ steps:
       - -ceu
       - |
         docker build -f config/otp/cloud/Dockerfile --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/apps/carless-hakusan-otp-c898d7a2:${COMMIT_SHA} /workspace/otp-build
-        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/apps/carless-hakusan-otp-c898d7a2:${COMMIT_SHA}
+        set -o pipefail
+        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/apps/carless-hakusan-otp-c898d7a2:${COMMIT_SHA} 2>&1 | tee /workspace/carless-otp-push.log
 
   - id: deploy-private-otp
     name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim

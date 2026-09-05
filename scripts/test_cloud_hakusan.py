@@ -6,6 +6,12 @@ from scripts.smoke_hakusan_release import validate
 
 
 class CloudContractTests(unittest.TestCase):
+    def test_otp_digest_uses_push_evidence_without_analysis_permissions(self):
+        deploy = Path("scripts/deploy-hakusan-otp.sh").read_text()
+        self.assertNotIn("gcloud artifacts docker images describe", deploy)
+        self.assertIn("carless-otp-push.log", deploy)
+        self.assertIn("tee /workspace/carless-otp-push.log", Path("cloudbuild.yaml").read_text())
+
     def test_smoke_rejects_mock_missing_dates_and_unknown(self):
         categories = ["supermarket", "hospital", "pharmacy", "city_hall", "station", "social"]
         diagnosis = {"data_source": "routing_provider", "item_results": [
