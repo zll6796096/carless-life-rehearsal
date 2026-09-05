@@ -49,6 +49,10 @@ export type DataQualityWarning = {
 };
 
 export type DemoFixture = {
+  data_profile?: "demo" | "hakusan";
+  pilot?: { service_start: string; service_end: string; attribution: string[]; source_url: string };
+  outbound_departure?: string;
+  return_departure?: string;
   home_location: HomeLocation;
   destinations: Destination[];
   default_mobility_profile: MobilityProfile;
@@ -68,6 +72,9 @@ export type FeasibilityResult = {
 };
 
 export type LifeDiagnosis = {
+  outbound_departure?: string | null;
+  return_departure?: string | null;
+  origin_label?: string | null;
   life_score: number;
   summary_ja: string;
   item_results: FeasibilityResult[];
@@ -78,6 +85,12 @@ export type LifeDiagnosis = {
 };
 
 export type RehearsalTask = {
+  data_source?: "fixture" | "routing_provider";
+  outbound_departure?: string | null;
+  return_departure?: string | null;
+  outbound_summary_ja?: string | null;
+  return_summary_ja?: string | null;
+  missed_connection_ja?: string | null;
   id: string;
   destination_id: string;
   destination_name: string;
@@ -91,6 +104,11 @@ export type RehearsalTask = {
 
 export type RehearsalTaskList = {
   tasks: RehearsalTask[];
+};
+
+export type RehearsalRecord = {
+  outcome: "completed" | "needs_support";
+  note: string;
 };
 
 export type DataQualityReport = {

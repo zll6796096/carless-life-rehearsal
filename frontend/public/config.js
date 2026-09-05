@@ -1,3 +1,4 @@
 window.__APP_CONFIG__ = {
-  API_BASE_URL: "http://localhost:8000"
+  // Deployment may supply a URL here; otherwise use VITE_API_BASE_URL or the local default.
+  API_BASE_URL: ""
 };

@@ -106,6 +106,9 @@ def run_life_diagnosis(request: DiagnosisRequest) -> LifeDiagnosis:
         data_confidence = min(data_confidence, 0.75)
 
     return LifeDiagnosis(
+        outbound_departure=getattr(request, "outbound_departure", None),
+        return_departure=getattr(request, "return_departure", None),
+        origin_label=request.home_location.name,
         life_score=life_score,
         summary_ja=_summary_ja(life_score, item_results),
         item_results=item_results,

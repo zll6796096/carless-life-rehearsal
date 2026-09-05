@@ -2,15 +2,21 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 
 import { generateRehearsals, getDemoFixture, runDiagnosis } from "../services/api";
-import type { DemoFixture, Destination, LifeDiagnosis, MobilityProfile, RehearsalTask } from "../types";
+import type { DemoFixture, Destination, LifeDiagnosis, MobilityProfile, RehearsalTask, RehearsalRecord } from "../types";
+import { departureError } from "../utils/departures";
 
 type AppStateContextValue = {
   fixture: DemoFixture | null;
   diagnosis: LifeDiagnosis | null;
   rehearsalTasks: RehearsalTask[];
+  rehearsalRecords: Record<string, RehearsalRecord>;
+  recordRehearsal: (id: string, outcome: RehearsalRecord["outcome"], note: string) => void;
   selectedDestinationIds: string[];
   profile: MobilityProfile | null;
   homeText: string;
+  outboundDeparture: string;
+  returnDeparture: string;
+  setDepartures: (outbound: string, returning: string) => void;
   setHomeText: (value: string) => void;
   toggleDestination: (destination: Destination) => void;
   setWalkMinutes: (minutes: number) => void;
@@ -50,12 +56,40 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [fixture, setFixture] = useState<DemoFixture | null>(null);
   const [diagnosis, setDiagnosis] = useState<LifeDiagnosis | null>(null);
   const [rehearsalTasks, setRehearsalTasks] = useState<RehearsalTask[]>([]);
+  const [rehearsalRecords, setRehearsalRecords] = useState<Record<string, RehearsalRecord>>({});
+  const recordRehearsal = useCallback((id: string, outcome: RehearsalRecord["outcome"], note: string) => {
+    if (!rehearsalTasks.some(task => task.id === id)) return;
+    setRehearsalRecords(current => ({ ...current, [id]: { outcome, note: note.trim().slice(0, 500) } }));
+  }, [rehearsalTasks]);
   const [selectedDestinationIds, setSelectedDestinationIds] = useState<string[] | null>(null);
   const [profile, setProfile] = useState<MobilityProfile | null>(null);
-  const [homeText, setHomeText] = useState("");
+  const [homeText, updateHomeText] = useState("");
+  const [outboundDeparture, updateOutbound] = useState("");
+  const [returnDeparture, updateReturn] = useState("");
+  const revisionRef = useRef(0);
   const fixtureRequestRef = useRef<Promise<DemoFixture> | null>(null);
   const diagnosisRequestRef = useRef<Promise<LifeDiagnosis> | null>(null);
   const rehearsalRequestRef = useRef<Promise<RehearsalTask[]> | null>(null);
+  const rehearsalsLoadedRef = useRef(false);
+
+  const invalidate = useCallback(() => {
+    revisionRef.current += 1;
+    diagnosisRequestRef.current = null;
+    rehearsalRequestRef.current = null;
+    rehearsalsLoadedRef.current = false;
+    setDiagnosis(null);
+    setRehearsalTasks([]);
+    setRehearsalRecords({});
+  }, []);
+  const setHomeText = useCallback((value: string) => {
+    updateHomeText(value);
+    invalidate();
+  }, [invalidate]);
+  const setDepartures = useCallback((outbound: string, returning: string) => {
+    updateOutbound(outbound);
+    updateReturn(returning);
+    invalidate();
+  }, [invalidate]);
 
   const ensureFixture = useCallback(async () => {
     if (fixture) return fixture;
@@ -67,7 +101,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           current ?? loaded.destinations.map((destination) => destination.id)
         );
         setProfile((current) => current ?? loaded.default_mobility_profile);
-        setHomeText((current) => current || loaded.home_location.name);
+        updateHomeText((current) => current || loaded.home_location.name);
         return loaded;
       })
       .finally(() => {
@@ -80,11 +114,23 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const ensureDiagnosis = useCallback(async () => {
     if (diagnosis) return diagnosis;
     if (diagnosisRequestRef.current) return diagnosisRequestRef.current;
+    const revision = revisionRef.current;
     const request = ensureFixture()
-      .then((loadedFixture) =>
-        runDiagnosis(selectedFixture(loadedFixture, selectedDestinationIds, profile, homeText))
-      )
+      .then((loadedFixture) => {
+        const error = departureError(loadedFixture, outboundDeparture, returnDeparture);
+        if (error) throw new Error(error);
+        const payload = selectedFixture(loadedFixture, selectedDestinationIds, profile, homeText);
+        if (!payload.destinations.length) throw new Error("目的地を選んでください。");
+        if (loadedFixture.data_profile === "hakusan") {
+          payload.home_location = loadedFixture.home_location;
+          payload.outbound_departure = `${outboundDeparture}:00+09:00`;
+          payload.return_departure = `${returnDeparture}:00+09:00`;
+          payload.mock_transport_results = {};
+        }
+        return runDiagnosis(payload);
+      })
       .then((response) => {
+        if (revision !== revisionRef.current) throw new Error("入力が変更されました。");
         setDiagnosis(response);
         return response;
       })
@@ -93,14 +139,17 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       });
     diagnosisRequestRef.current = request;
     return request;
-  }, [diagnosis, ensureFixture, homeText, profile, selectedDestinationIds]);
+  }, [diagnosis, ensureFixture, homeText, profile, selectedDestinationIds, outboundDeparture, returnDeparture]);
 
   const ensureRehearsals = useCallback(async () => {
-    if (rehearsalTasks.length) return rehearsalTasks;
+    if (rehearsalsLoadedRef.current) return rehearsalTasks;
     if (rehearsalRequestRef.current) return rehearsalRequestRef.current;
+    const revision = revisionRef.current;
     const request = ensureDiagnosis()
       .then(generateRehearsals)
       .then((response) => {
+        if (revision !== revisionRef.current) throw new Error("入力が変更されました。");
+        rehearsalsLoadedRef.current = true;
         setRehearsalTasks(response.tasks);
         return response.tasks;
       })
@@ -117,9 +166,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         ? (current ?? []).filter((id) => id !== destination.id)
         : [...(current ?? []), destination.id]
     );
-    setDiagnosis(null);
-    setRehearsalTasks([]);
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
   const setWalkMinutes = useCallback((minutes: number) => {
     setProfile((current) => ({
@@ -133,9 +181,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       }),
       walk_minutes: minutes
     }));
-    setDiagnosis(null);
-    setRehearsalTasks([]);
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
   const setMaxTransfers = useCallback((count: number) => {
     setProfile((current) => ({
@@ -149,18 +196,22 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       }),
       max_transfers: count
     }));
-    setDiagnosis(null);
-    setRehearsalTasks([]);
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
   const value = useMemo(
     () => ({
       fixture,
       diagnosis,
       rehearsalTasks,
+      rehearsalRecords,
+      recordRehearsal,
       selectedDestinationIds: selectedDestinationIds ?? [],
       profile,
       homeText,
+      outboundDeparture,
+      returnDeparture,
+      setDepartures,
       setHomeText,
       toggleDestination,
       setWalkMinutes,
@@ -177,8 +228,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       ensureRehearsals,
       fixture,
       homeText,
+      outboundDeparture,
+      returnDeparture,
+      setDepartures,
+      setHomeText,
       profile,
       rehearsalTasks,
+      rehearsalRecords,
+      recordRehearsal,
       selectedDestinationIds,
       setMaxTransfers,
       setWalkMinutes,

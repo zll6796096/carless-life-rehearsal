@@ -1,5 +1,6 @@
 import { AlertTriangle, Mic, RotateCcw, Share2 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
 import { AsyncErrorState } from "../components/AsyncErrorState";
@@ -23,11 +24,16 @@ function detectCategory(command: string): DestinationCategory | null {
   if (command.includes("病院")) return "hospital";
   if (command.includes("薬局")) return "pharmacy";
   if (command.includes("市役所")) return "city_hall";
+  if (command.includes("駅")) return "station";
+  if (command.includes("交流")) return "social";
   return null;
 }
 
 export function DailyPage() {
-  const { ensureRehearsals } = useAppState();
+  const { ensureRehearsals, fixture, outboundDeparture, returnDeparture } = useAppState();
+  const pilot = fixture?.data_profile === "hakusan";
+  const choices: typeof commandButtons = pilot ? [...commandButtons,
+    {label: "駅", category: "station"}, {label: "交流", category: "social"}] : commandButtons;
   const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } =
     useSpeechRecognition();
   const [answer, setAnswer] = useState("行きたい場所を選んでください。");
@@ -39,7 +45,7 @@ export function DailyPage() {
     try {
       const tasks = await ensureRehearsals();
       const task = tasks.find((item) => item.destination_category === category);
-      const text = task ? task.voice_script_ja : missingTaskMessage;
+      const text = task ? task.voice_script_ja : pilot ? "この条件では練習できる経路が確認できません。日時・条件を変更して再診断してください。" : missingTaskMessage;
       setAnswer(text);
       speakJapanese(text);
     } catch {
@@ -101,6 +107,10 @@ export function DailyPage() {
   return (
     <MobileAppShell title="いつもの場所に行きたい" className="daily-screen" showHomeReturn>
       <section className="daily-panel">
+        {pilot ? <>
+          <p className="info-note">指定日時の練習です（今日の運行へ自動更新されません）。日本時間：行き {outboundDeparture.replace("T", " ")} ／ 帰り {returnDeparture.replace("T", " ")}。公開テスト地点からの計算です。</p>
+          <p><Link to="/rehearsal">練習の記録・家族に共有</Link> · <Link to="/onboarding">日時・条件を変更して再診断</Link></p>
+        </> : null}
         <button className="mic-button" type="button" onClick={() => void toggleListening()}>
           <Mic aria-hidden="true" size={52} />
           {listening ? "話し終わったら押す" : "マイクを押して話す"}
@@ -113,7 +123,7 @@ export function DailyPage() {
           {answer}
         </p>
         <div className="choice-grid destination-choices" role="group" aria-label="行き先を選ぶ">
-          {commandButtons.map((command) => (
+          {choices.map((command) => (
             <button
               className="choice-button"
               key={command.category}

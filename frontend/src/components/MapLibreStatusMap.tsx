@@ -56,7 +56,8 @@ export function MapLibreStatusMap({
         const markers: maplibregl.Marker[] = [];
         const homeEl = document.createElement("div");
         homeEl.className = "map-marker home-marker";
-        homeEl.textContent = "家";
+        homeEl.textContent = fixture.data_profile === "hakusan" ? "起" : "家";
+        homeEl.title = fixture.data_profile === "hakusan" ? "公開テスト地点（自宅ではありません）" : fixture.home_location.name;
         markers.push(
           new maplibregl.Marker({ element: homeEl })
             .setLngLat([fixture.home_location.lon ?? 139.766, fixture.home_location.lat ?? 35.6805])

@@ -2,12 +2,14 @@ import { ChevronRight, ClipboardList, Database, MapPinned, Mic } from "lucide-re
 import { Link } from "react-router-dom";
 
 import { MobileAppShell } from "../components/MobileAppShell";
+import { isHakusanPilot } from "../services/api";
 
 export function HomePage() {
   return (
     <MobileAppShell title="車なし生活リハーサル" className="home-screen">
       <section className="home-stack" aria-label="はじめる">
         <p className="main-message">免許を返す前に、車なしの毎日を少しだけ試してみましょう。</p>
+        {isHakusanPilot() ? <p className="info-note">白山試用：公開テスト地点から、指定日時の往復を診断・練習します。自動的に今日の運行へ更新されるものではありません。</p> : null}
         <div className="home-actions primary-actions">
           <Link className="large-button primary" to="/onboarding">
             <ClipboardList aria-hidden="true" size={32} />

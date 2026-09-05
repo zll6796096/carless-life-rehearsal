@@ -18,3 +18,5 @@ htmlcov/
 .worktrees/
 data/raw/
 data/external/
+.playwright-cli/
+output/playwright/

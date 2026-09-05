@@ -7,6 +7,59 @@ from app.services.diagnosis.engine import run_life_diagnosis
 from app.services.rehearsal.engine import generate_rehearsal_tasks
 
 
+def real_diagnosis_payload():
+    payload = run_life_diagnosis(build_demo_fixture()).model_dump(mode="json")
+    payload.update(
+        data_source="routing_provider",
+        origin_label="公開テスト地点",
+        outbound_departure="2026-09-08T06:50:00+09:00",
+        return_departure="2026-09-08T11:00:00+09:00",
+    )
+    return payload
+
+
+def test_real_rehearsals_keep_dates_in_all_channels():
+    client = TestClient(app)
+    payload = real_diagnosis_payload()
+    response = client.post("/rehearsals/generate", json=payload)
+    assert response.status_code == 200
+    tasks = response.json()["tasks"]
+    eligible = [i for i in payload["item_results"] if i["status"] != "unknown"]
+    assert len(tasks) == len(eligible)
+    for task in tasks:
+        assert task["outbound_departure"] == payload["outbound_departure"]
+        assert task["return_departure"] == payload["return_departure"]
+        for field in ("memo_ja", "voice_script_ja", "family_share_text_ja"):
+            assert "2026-09-08 06:50" in task[field]
+            assert "2026-09-08 11:00" in task[field]
+            assert "10時ごろ" not in task[field]
+            assert "公開テスト地点" in task[field]
+        assert "次の便を待つ" not in task["missed_connection_ja"]
+
+
+def test_real_rehearsals_reject_missing_or_reversed_dates():
+    client = TestClient(app)
+    for changes in (
+        {"outbound_departure": None},
+        {"return_departure": None},
+        {"outbound_departure": "2026-09-08T06:50:00"},
+        {"return_departure": "2026-09-08T06:00:00+09:00"},
+    ):
+        assert (
+            client.post(
+                "/rehearsals/generate", json={**real_diagnosis_payload(), **changes}
+            ).status_code
+            == 422
+        )
+
+
+def test_unknown_routes_do_not_create_real_rehearsals():
+    payload = real_diagnosis_payload()
+    for item in payload["item_results"]:
+        item["status"] = "unknown"
+    assert TestClient(app).post("/rehearsals/generate", json=payload).json()["tasks"] == []
+
+
 def test_generate_rehearsal_tasks_prefers_easy_destinations() -> None:
     diagnosis = run_life_diagnosis(build_demo_fixture())
 

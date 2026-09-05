@@ -10,7 +10,10 @@ _TASK_STORE: dict[str, RehearsalTask] = {}
 
 @router.post("/generate", response_model=RehearsalTaskList)
 def generate_rehearsals(diagnosis: LifeDiagnosis) -> RehearsalTaskList:
-    tasks = generate_rehearsal_tasks(diagnosis)
+    try:
+        tasks = generate_rehearsal_tasks(diagnosis)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
     for task in tasks:
         _TASK_STORE[task.id] = task
     return RehearsalTaskList(tasks=tasks)

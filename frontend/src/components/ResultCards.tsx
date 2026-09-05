@@ -27,7 +27,7 @@ const resultGroups: Array<{
   }
 ];
 
-export function ResultCards({ results }: { results: FeasibilityResult[] }) {
+export function ResultCards({ results, showJourneyDetails = false }: { results: FeasibilityResult[]; showJourneyDetails?: boolean }) {
   return (
     <div className="result-groups">
       {resultGroups.map((group) => {
@@ -47,6 +47,12 @@ export function ResultCards({ results }: { results: FeasibilityResult[] }) {
                       <StatusBadge status={item.status} />
                     </div>
                     <p>{item.reasons_ja[0]}</p>
+                    {showJourneyDetails ? <details>
+                      <summary>{item.destination_name}の往復と理由</summary>
+                      <p>行き：{item.outbound_summary_ja ?? "経路未確認"}</p>
+                      <p>帰り：{item.return_summary_ja ?? "経路未確認"}</p>
+                      {item.reasons_ja.slice(1).map(reason => <p key={reason}>{reason}</p>)}
+                    </details> : null}
                     <button
                       className="speaker-button"
                       type="button"

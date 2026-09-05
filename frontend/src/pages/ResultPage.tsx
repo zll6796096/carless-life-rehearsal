@@ -5,8 +5,14 @@ import { MobileAppShell } from "../components/MobileAppShell";
 import { ResultCards } from "../components/ResultCards";
 import { useAppState } from "../state/AppState";
 import { elderlyNextAction, plainLifeScore } from "../utils/labels";
+import { isHakusanPilot } from "../services/api";
+import { DiagnosisPage } from "./DiagnosisPage";
 
 export function ResultPage() {
+  return isHakusanPilot() ? <DiagnosisPage /> : <DemoResultPage />;
+}
+
+function DemoResultPage() {
   const { diagnosis, ensureDiagnosis } = useAppState();
   const [loading, setLoading] = useState(!diagnosis);
 

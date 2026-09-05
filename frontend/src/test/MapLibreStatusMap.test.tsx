@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DemoFixture, FeasibilityResult } from "../types";
 
 const mapMocks = vi.hoisted(() => ({
+  markerElements: [] as HTMLElement[],
   mapCreates: vi.fn(),
   mapRemoves: vi.fn(),
   markerRemoves: vi.fn()
@@ -23,6 +24,9 @@ vi.mock("../services/maplibre", () => {
   }
 
   class FakeMarker {
+    constructor(options: { element: HTMLElement }) {
+      mapMocks.markerElements.push(options.element);
+    }
     setLngLat() {
       return this;
     }
@@ -89,6 +93,13 @@ const results: FeasibilityResult[] = [
 ];
 
 describe("MapLibreStatusMap lifecycle", () => {
+  it("labels the pilot origin as a test starting point, not a home", async () => {
+    mapMocks.markerElements.length = 0;
+    const { MapLibreStatusMap } = await import("../components/MapLibreStatusMap");
+    render(<MapLibreStatusMap fixture={{...fixture, data_profile: "hakusan"}} results={results} />);
+    await waitFor(() => expect(mapMocks.markerElements[0]?.textContent).toBe("起"));
+    expect(mapMocks.markerElements[0].title).toContain("公開テスト地点");
+  });
   beforeEach(() => {
     mapMocks.mapCreates.mockClear();
     mapMocks.mapRemoves.mockClear();

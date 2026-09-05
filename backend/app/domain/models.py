@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
@@ -126,6 +127,9 @@ class FeasibilityResult(BaseModel):
 
 
 class LifeDiagnosis(BaseModel):
+    outbound_departure: AwareDatetime | None = None
+    return_departure: AwareDatetime | None = None
+    origin_label: str | None = None
     life_score: float
     summary_ja: str
     item_results: list[FeasibilityResult]
@@ -148,6 +152,7 @@ class DemoFixture(BaseModel):
 
 
 class DiagnosisRequest(BaseModel):
+    data_profile: Literal["demo", "hakusan"] = "demo"
     home_location: HomeLocation
     destinations: list[Destination]
     default_mobility_profile: MobilityProfile | None = None
@@ -181,6 +186,12 @@ class DiagnosisRequest(BaseModel):
 
 
 class RehearsalTask(BaseModel):
+    data_source: DiagnosisDataSource = DiagnosisDataSource.FIXTURE
+    outbound_departure: AwareDatetime | None = None
+    return_departure: AwareDatetime | None = None
+    outbound_summary_ja: str | None = None
+    return_summary_ja: str | None = None
+    missed_connection_ja: str | None = None
     id: str
     destination_id: str
     destination_name: str

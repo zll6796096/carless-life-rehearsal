@@ -32,7 +32,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function getDemoFixture(): Promise<DemoFixture> {
-  return requestJson<DemoFixture>("/fixtures/demo");
+  return requestJson<DemoFixture>(isHakusanPilot() ? "/fixtures/hakusan" : "/fixtures/demo");
+}
+
+export function isHakusanPilot(): boolean {
+  return import.meta.env.VITE_DATA_PROFILE === "hakusan";
 }
 
 export function runDiagnosis(payload: DemoFixture): Promise<LifeDiagnosis> {
