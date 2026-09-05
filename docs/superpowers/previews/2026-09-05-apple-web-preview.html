@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>車なし生活｜Apple-style design preview</title>
+<link rel="icon" href="data:,">
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;color:#202420;background:#eef0ee;font-synthesis:none;--green:#176b55;--muted:#5f6862;--line:#e1e6e1;--amber:#804600}
+*{box-sizing:border-box}body{margin:0}button,a,summary{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}a{color:var(--green)}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #0879cf;outline-offset:3px}
+.board-header{max-width:960px;margin:0 auto;padding:44px 32px 24px;display:flex;justify-content:space-between;align-items:end;gap:30px}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);font-weight:700}.board-header h1{font-size:30px;letter-spacing:-.04em;margin:8px 0 10px}.board-header p{font-size:14px;color:var(--muted);margin:0;line-height:1.7}.version{font-size:12px;border:1px solid #cbd4cd;padding:8px 12px;border-radius:20px;white-space:nowrap}
+.board{display:grid;grid-template-columns:390px 390px;gap:40px;justify-content:center;padding:0 24px 40px}.caption{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:0 3px 12px}.caption b{color:#303b34;font-weight:600}
+.phone{height:844px;display:flex;flex-direction:column;background:#f5f6f3;border:1px solid #dce2db;border-radius:28px;overflow:hidden;box-shadow:0 14px 42px #1d38230c;position:relative}
+.screen-header{padding:24px 24px 16px;flex:none}.brand{display:flex;gap:9px;align-items:center;font-size:16px;font-weight:600;letter-spacing:-.02em}.mark{width:29px;height:29px;color:var(--green);display:grid;place-items:center}.screen-header .preview-label{font-size:11px;letter-spacing:.06em;color:var(--muted);margin:9px 0 0}
+.scroll{flex:1;overflow:auto;padding:0 24px 24px;scrollbar-width:thin}.hero-title{font-size:33px;font-weight:700;letter-spacing:-.05em;line-height:1.35;margin:10px 0 14px}.lead{font-size:17px;line-height:1.8;color:var(--muted);margin:0}
+.scene{height:130px;margin:14px -2px 14px;position:relative;display:grid;place-items:center}.scene svg{width:100%;height:100%}
+.location{padding:16px 18px;background:white;border-radius:18px;margin:12px 0 20px}.location .label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}.location strong{display:block;font-size:17px;line-height:1.6;margin-top:5px}.location p{font-size:14px;line-height:1.65;color:var(--muted);margin:7px 0 0}
+.section-title{font-size:14px;letter-spacing:.015em;color:var(--muted);font-weight:500;margin:20px 3px 10px}.group{background:#fff;border-radius:17px;overflow:hidden}.row{border:0;background:transparent;display:flex;align-items:center;gap:12px;min-height:64px;padding:14px 16px;color:#202420;text-align:left;width:100%;text-decoration:none;font-size:16px;line-height:1.5}.row+.row{border-top:1px solid var(--line)}.row .arrow{margin-left:auto;color:#89958c;flex:none}.row .icon{color:var(--green);flex:none}.row-sub{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.dock{padding:12px 24px 20px;background:#ffffff;box-shadow:0 -1px 0 #e2e7df;flex:none}.primary{background:var(--green);color:white;border:0;border-radius:16px;min-height:62px;padding:14px 16px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;font-size:18px;line-height:1.5}.dock p{font-size:12px;color:var(--muted);text-align:center;margin:9px 0 0;line-height:1.5}
+.back{min-height:44px;display:inline-flex;align-items:center;gap:4px;border:0;padding:0;background:transparent;color:var(--green);font-size:16px}.result-header{padding-top:14px;padding-bottom:10px}.result-header h2{font-size:28px;letter-spacing:-.045em;margin:5px 0 0}
+.result-intro{padding-top:12px}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:20px;background:#fff1db;color:var(--amber);padding:7px 11px;font-size:13px;font-weight:600}.result-intro h3{font-size:26px;letter-spacing:-.035em;line-height:1.5;margin:12px 0 8px}.result-intro p{font-size:16px;line-height:1.75;color:var(--muted);margin:0 0 16px}
+.date-panel{background:white;border-radius:17px;padding:16px;margin:0 0 14px}.date-top{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600}.date-top button{min-height:44px;color:var(--green);background:transparent;border:0;padding:0 4px;font-size:14px}.times{display:flex;align-items:center;gap:20px;margin-top:3px}.time{display:flex;flex-direction:column;gap:4px}.time span{font-size:12px;color:var(--muted)}.time strong{font-size:25px;font-weight:600;letter-spacing:-.03em}.time-line{flex:1;height:1px;background:#dce3dc;position:relative}.time-line:after{content:"";position:absolute;right:0;top:-2px;width:5px;height:5px;border-top:1px solid #c7d0c7;border-right:1px solid #c7d0c7;transform:rotate(45deg)}
+.caution{display:flex;gap:10px;padding:14px 0 16px;border-bottom:1px solid #dce1d9;color:#5b5b43}.caution svg{flex:none;margin-top:2px;color:#8b600d}.caution p{font-size:14px;line-height:1.75;margin:0}.caution strong{font-weight:600;color:#594b2f}
+.group-heading{display:flex;align-items:center;justify-content:space-between;margin:23px 2px 10px}.group-heading h3{font-size:17px;margin:0;letter-spacing:-.015em}.count{font-size:13px;color:var(--muted)}
+.destination{background:white}.destination+.destination{border-top:1px solid var(--line)}.destination summary{list-style:none;cursor:pointer;padding:16px;display:flex;align-items:center;gap:12px;min-height:80px}.destination summary::-webkit-details-marker{display:none}.place-icon{width:36px;height:36px;border-radius:11px;background:#f3f5f1;color:#4f6555;display:grid;place-items:center;flex:none}.place-text{min-width:0;flex:1}.category{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}.place-name{font-size:16px;font-weight:600;line-height:1.5;display:block}.chevron{color:#849185;flex:none;transition:transform .15s}.destination[open] .chevron{transform:rotate(90deg)}.journey{padding:0 16px 16px 64px;font-size:14px;line-height:1.75;color:var(--muted)}.journey p{margin:0 0 8px}.text-button{border:0;background:#eef4ef;border-radius:10px;color:var(--green);min-height:44px;padding:10px 12px;display:flex;align-items:center;gap:7px;font-size:14px}
+.support .place-icon{background:#fff3e3;color:var(--amber)}.empty{font-size:14px;line-height:1.65;color:var(--muted);padding:0 2px}
+.evidence{margin-top:22px;border-top:1px solid #dce1d9;font-size:14px;line-height:1.8}.evidence summary{min-height:52px;padding:14px 0;cursor:pointer;font-weight:600}.evidence p{margin:0 0 12px;color:var(--muted)}.evidence a{display:inline-flex;min-height:44px;align-items:center;margin-right:10px}.credits{font-size:12px;color:var(--muted);line-height:1.8;margin-top:20px}.credits a{display:inline-flex;min-height:44px;align-items:center}
+.board-footer{max-width:860px;padding:0 24px 40px;margin:0 auto;font-size:14px;line-height:1.8;color:var(--muted)}.board-footer strong{color:#293c2f}.preview-switch{display:none}
+dialog{border:1px solid #d9e1d9;border-radius:22px;padding:24px;max-width:min(360px,calc(100% - 32px));box-shadow:0 30px 80px #10211733;color:#202420}dialog::backdrop{background:#17251c66}dialog h2{font-size:22px;margin:0 0 12px}dialog p{font-size:16px;line-height:1.8;margin:0 0 20px}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:850px){.board-header{padding:24px 20px 18px}.board-header h1{font-size:24px}.version{display:none}.board{display:block;padding:0 12px 24px}.preview-switch{display:flex;gap:6px;padding:0 20px 16px}.preview-switch button{background:white;border:1px solid #d3ded3;color:var(--green);padding:10px 22px;min-height:44px;border-radius:12px;font-size:15px}.preview-switch button[aria-pressed=true]{background:var(--green);color:white}.panel{max-width:430px;margin:auto}.panel[aria-hidden=true]{display:none}.phone{height:844px;height:min(900px,calc(100svh - 40px));min-height:640px;border-radius:22px}.board-footer{padding:0 20px 30px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg style="position:absolute;width:0;height:0" aria-hidden="true"><defs>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="route" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8"/></symbol>
+<symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
+<symbol id="report" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+<symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+<symbol id="hospital" viewBox="0 0 24 24"><path d="M5 21V5h14v16M9 21v-5h6v5M9 9h6M12 6v6"/></symbol>
+<symbol id="store" viewBox="0 0 24 24"><path d="M4 10v11h16V10M3 10l2-7h14l2 7M3 10h18M9 21v-7h6v7"/></symbol>
+<symbol id="cross" viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z"/></symbol>
+<symbol id="building" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5H3Zm2 3v8m7-8v8m7-8v8M3 21h18"/></symbol>
+<symbol id="train" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="15" rx="3"/><path d="M5 10h14M8 14h.01M16 14h.01M8 18l-2 3m10-3 2 3"/></symbol>
+<symbol id="people" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M17 4a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 4v3"/></symbol>
+<symbol id="sound" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm5 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+</defs></svg>
+<header class="board-header"><div><div class="eyebrow">Carless Life Rehearsal / design study</div><h1>日常に寄り添う、やさしい道しるべ。</h1><p>首页与诊断结果页 · 苹果风格预览 · 尚未接入功能或发布</p></div><span class="version">01 / 静态设计预览</span></header>
+<nav class="preview-switch" aria-label="预览页面"><button type="button" data-screen="home" aria-pressed="true">首页</button><button type="button" data-screen="result" aria-pressed="false">诊断结果</button></nav>
+<main class="board">
+<section class="panel" id="home" aria-label="首页预览"><p class="caption"><b>01 首页</b><span>一个清晰的起点</span></p>
+<div class="phone">
+<header class="screen-header"><div class="brand"><span class="mark"><svg aria-hidden="true"><use href="#route"/></svg></span>車なし生活リハーサル</div><p class="preview-label">デザイン見本 · 実際の診断は実行しません</p></header>
+<div class="scroll">
+<h2 class="hero-title">車がなくても、<br>いつもの暮らしを。</h2>
+<p class="lead">免許を返す前に。<br>お買い物や通院の往復を、<br>ひとつずつ確かめてみましょう。</p>
+<div class="scene" aria-hidden="true"><svg viewBox="0 0 340 130"><ellipse cx="171" cy="104" rx="143" ry="19" fill="#e5ece1" stroke="none"/><path d="M53 96h70c35 0 16-43 65-43h81" stroke="#a0b89c" stroke-width="2" stroke-dasharray="3 6"/><g stroke="#62846b" fill="#fff" stroke-width="2"><path d="m26 62 28-23 28 23v36H26Z"/><path d="M46 98V77h17v21"/><rect x="239" y="21" width="61" height="70" rx="14"/><path d="M246 42h47v25h-47Z" fill="#edf3e8"/><path d="M250 30h38M248 90v7m43-7v7"/><circle cx="250" cy="79" r="2"/><circle cx="289" cy="79" r="2"/></g><circle cx="167" cy="81" r="18" fill="#176b55" stroke="none"/><path d="m160 82 5 5 10-12" stroke="#fff" stroke-width="2.5"/></svg></div>
+<div class="location"><span class="label"><svg aria-hidden="true" style="width:16px;height:16px"><use href="#pin"/></svg>白山市で試す · 公開テスト地点</span><strong>松任駅西側の住宅地</strong><p>ご自宅からの診断ではありません。<br>日時を指定して、静的時刻表で確認します。</p></div>
+<div class="group"><button class="row" type="button" data-demo="「今日はどこかに行きたい」は既存の外出相談画面への入口です。この見本では診断しません。"><svg class="icon" aria-hidden="true"><use href="#route"/></svg><span>今日はどこかに行きたい<span class="row-sub">行きたい場所から考える</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></button></div>
+<h3 class="section-title">家族・支援者の方へ</h3><div class="group">
+<button class="row" type="button" data-demo="家族向けレポートは既存機能を保持します。この見本は実際のレポートを生成しません。"><svg class="icon" aria-hidden="true"><use href="#people"/></svg><span>家族向けレポート</span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></button>
+<button class="row" type="button" data-demo="正式版では既存のデータ確認画面へ移動します。公開元・ライセンス・未確認事項は維持します。"><svg class="icon" aria-hidden="true"><use href="#report"/></svg><span>データ確認</span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></button>
+</div></div>
+<footer class="dock"><button class="primary" type="button" data-demo="正式版では条件・出発日時の設定へ進みます。これは見た目を確認するための静的プレビューです。">車なし生活を確認する<svg aria-hidden="true"><use href="#arrow"/></svg></button><p>自動的に今日の運行へ更新されません</p></footer>
+</div></section>
+<section class="panel" id="result" aria-label="诊断结果预览"><p class="caption"><b>02 诊断结果</b><span>结论 → 注意点 → 下一步</span></p>
+<div class="phone">
+<header class="screen-header result-header"><button type="button" class="back" data-home><svg aria-hidden="true" style="transform:rotate(180deg)"><use href="#arrow"/></svg>ホーム</button><h2>診断結果</h2><p class="preview-label">デザイン見本 · 2026年9月8日の検証例</p></header>
+<div class="scroll">
+<div class="result-intro"><span class="pill"><svg aria-hidden="true" style="width:15px;height:15px"><use href="#people"/></svg>家族・支援者と確認</span><h3>車なし生活には<br>支援が必要です</h3><p>外出の前に、往復の条件を<br>家族・施設・交通事業者と確認しましょう。</p></div>
+<div class="date-panel"><div class="date-top"><span>9月8日（火） · 日本時間</span><button type="button" data-demo="日時を変更すると再診断が必要です。この見本では日時を変更せず、保存も行いません。">条件変更</button></div><div class="times"><div class="time"><span>行きの出発</span><strong>06:50</strong></div><div class="time-line"></div><div class="time"><span>帰りの出発</span><strong>11:00</strong></div></div></div>
+<div class="caution"><svg aria-hidden="true"><use href="#info"/></svg><p><strong>公開テスト地点・静的時刻表</strong><br>ご自宅からの診断ではありません。遅延・営業時間・建物入口・段差は未確認です。</p></div>
+<div class="group-heading"><h3>家族や支援者と確認</h3><span class="count">1か所</span></div><div class="group support">
+<details class="destination"><summary><span class="place-icon"><svg aria-hidden="true"><use href="#store"/></svg></span><span class="place-text"><span class="category">スーパー · 支援が必要</span><span class="place-name">大阪屋ショップ松任店</span></span><svg class="chevron" aria-hidden="true"><use href="#arrow"/></svg></summary><div class="journey"><p>検証例：行きは徒歩25分。帰りはバスと徒歩で17分（うち徒歩13分）。階段や建物入口の通行条件は未確認です。</p><button class="text-button" type="button" data-demo="音声ボタンの配置見本です。音声読み上げはこの見本では実行しません。"><svg aria-hidden="true"><use href="#sound"/></svg>理由を聞く</button></div></details>
+</div>
+<div class="group-heading"><h3>注意して行く</h3><span class="count">5か所</span></div><div class="group" id="caution-list"></div>
+<div class="group-heading"><h3>自分で行けそう</h3><span class="count">0か所</span></div><p class="empty">今は該当する場所がありません。</p>
+<details class="evidence"><summary>判定の根拠・データの注意点</summary><p>生活成立度 55点 · データ充足度49%<br>安全性や到着確率ではありません。</p><p>各目的地への個別の往復案です。周遊計画ではありません。リアルタイム運行・遅延・営業時間は確認していません。</p><p>一部の目的地は停留所座標を使用しています。建物入口・段差・無障害経路は未確認です。実際の外出前に施設・交通事業者へご確認ください。</p><p>対象期間：2026-03-16 ～ 2027-03-15。松任・美川地域の対象11路線に限定しています。</p></details>
+<div class="credits">白山市「めぐーる」GTFS（CC BY 4.0）を加工して利用。<br>© OpenStreetMap contributors, ODbL<br><a href="https://www.city.hakusan.lg.jp/machi/kotsu/1007749/index.html">白山市のデータ公開元</a> · <a href="https://creativecommons.org/licenses/by/4.0/deed.ja">CC BY 4.0</a> · <a href="https://www.openstreetmap.org/copyright">OpenStreetMap / ODbL</a></div>
+</div>
+<footer class="dock"><button class="primary" type="button" data-demo="正式版では既存の出行練習へ進みます。この見本では練習の開始・記録・共有は行いません。">リハーサルを見る<svg aria-hidden="true"><use href="#arrow"/></svg></button><p>練習の記録は、安全性の保証ではありません</p></footer>
+</div></section>
+</main>
+<footer class="board-footer"><strong>设计边界</strong>　参考 Konsta UI 的 iOS 分组列表与层级，不复制 Apple 资产。本页为独立 HTML 设计稿，尚未安装 Konsta / Tailwind；按钮仅演示反馈，数据来自已保存的白山验证样例，并非新的实时诊断。<br>电脑上并排比较；窄屏可切换首页与结果页。正式网站、API、OTP 及数据保持不变。</footer>
+<dialog id="preview-dialog" aria-labelledby="dialog-title"><h2 id="dialog-title">デザインプレビュー</h2><p id="dialog-message"></p><button class="primary" type="button" id="close-dialog">閉じる</button></dialog>
+<script>
+const entries=[
+["hospital","病院","公立松任石川中央病院"],
+["cross","薬局","クスリのアオキ 布市店"],
+["building","市役所","市役所"],
+["train","駅","松任駅"],
+["people","交流","福祉ふれあいセンター"]
+];
+document.getElementById("caution-list").innerHTML=entries.map(([icon,category,name])=>`<details class="destination"><summary><span class="place-icon"><svg aria-hidden="true"><use href="#${icon}"/></svg></span><span class="place-text"><span class="category">${category} · 注意あり</span><span class="place-name">${name}</span></span><svg class="chevron" aria-hidden="true"><use href="#arrow"/></svg></summary><div class="journey"><p>行き・帰りともに、階段や建物入口の通行条件は未確認です。外出前に家族・施設・交通事業者へご確認ください。</p><button class="text-button" type="button" data-demo="音声ボタンの配置見本です。音声読み上げはこの見本では実行しません。"><svg aria-hidden="true"><use href="#sound"/></svg>理由を聞く</button></div></details>`).join("");
+const dialog=document.getElementById("preview-dialog");
+document.addEventListener("click",e=>{const b=e.target.closest("[data-demo]");if(b){document.getElementById("dialog-message").textContent=b.dataset.demo;dialog.showModal()}});
+document.getElementById("close-dialog").addEventListener("click",()=>dialog.close());
+let selected="home";const mq=matchMedia("(max-width:850px)");
+function updatePanels(){document.querySelectorAll(".panel").forEach(p=>{p.setAttribute("aria-hidden",String(mq.matches&&p.id!==selected))});document.querySelectorAll("[data-screen]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.screen===selected)))}
+document.querySelectorAll("[data-screen]").forEach(b=>b.addEventListener("click",()=>{selected=b.dataset.screen;updatePanels()}));
+document.querySelector("[data-home]").addEventListener("click",()=>{selected="home";updatePanels();document.getElementById("home").scrollIntoView({block:"start"})});
+mq.addEventListener("change",updatePanels);updatePanels();
+</script>
+</body></html>
